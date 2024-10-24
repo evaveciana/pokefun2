@@ -6,11 +6,6 @@ type stats = {
   speed : int;
 }
 
-type move =
-  | Tackle
-  | Growl
-  | Ember
-
 (* Define a variant type for species *)
 type species =
   | Pikachu
@@ -18,10 +13,37 @@ type species =
   | Bulbasaur
   | Squirtle
 
+type tipe =
+  | Water
+  | Fire
+  | Grass
+  | Electric
+
+type move = {
+  name : string;
+  power : int;
+  move_type : tipe;
+}
+
 module type POKEMON = sig
   type t
+  (** type of a pokemon*)
 
-  (* val calculate_stats : stats -> stats *)
+  val create : string -> int -> t
+  (** [create species level] is a [species] pokemon that is level [level] *)
+
+  val species : t -> species
+  (** [species p] is the species of pokemon [p]*)
+
+  val base_stats : t -> stats
+  (** [base_stats p] is the base stats of pokemon [p]*)
+
+  val cur_stats : t -> stats
+  (** [cur_stats p] is the current stats of pokemon [p]*)
+
+  val attack : t -> t -> move -> t
+  (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
+      pokemon [defender] and returns the resulting defending pokemon *)
 end
 
 module Pokemon = struct
@@ -29,11 +51,15 @@ module Pokemon = struct
 
   type t = {
     species : string;
+    tipe : tipe;
     base_stats : int;
     cur_stats : int;
+    moves : move list;
   }
 
-  let create name level = { species = name; base_stats = 0; cur_stats = 0 }
+  let create name level =
+    { species = name; tipe = Water; base_stats = 0; cur_stats = 0; moves = [] }
+
   let attack attacker defender = 0
 end
 
