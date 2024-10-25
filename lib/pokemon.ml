@@ -115,6 +115,12 @@ let def p = (cur_stats p).def
 let spdef p = (cur_stats p).spdef
 let spd p = (cur_stats p).spd
 let attack attacker defender move = create "" 1
-let get_tipe_from_species species = (None, None)
+let apply_status_effect p stat_name num_stages = create "" 1
+
+let get_tipe_from_species species =
+  match species with
+  | "Pikachu" -> (Electric, None)
+  | _ -> (None, None)
+
 let get_stats_from_species species = zero_stats
 let calc_stats base_stats nature level = zero_stats
