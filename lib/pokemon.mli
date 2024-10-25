@@ -19,12 +19,11 @@ val create : string -> int -> t
 val species : t -> string
 (** [species p] is the species of pokemon [p]*)
 
-val base_stats : t -> stats
-(** [base_stats p] is the base stats of pokemon [p]*)
+(* val base_stats : t -> stats * [base_stats p] is the base stats of pokemon
+   [p] *)
 
-val cur_stats : t -> stats
-(** [cur_stats p] is the current stats of pokemon [p], including any changes
-    from burn, paralysis, etc.*)
+(* val cur_stats : t -> stats (** [cur_stats p] is the current stats of pokemon
+   [p], including any changes from burn, paralysis, etc.*) *)
 
 val base_hp : t -> int
 (** [base_hp p] is the base HP of pokemon [p]. *)
@@ -73,6 +72,10 @@ val spd : t -> int
 val attack : t -> t -> move -> t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting defending pokemon *)
+
+val apply_status_effects : t -> string -> int -> t
+(** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
+    change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
 val get_tipe_from_species : string -> tipe * tipe
 (** [get_tipe_from_species spec] returns the tipes of a [spec] pokemon *)
