@@ -116,25 +116,6 @@ let spdef p = (cur_stats p).spdef
 let spd p = (cur_stats p).spd
 let attack attacker defender move = create "" 1
 
-type pokemon_type =
-  | Grass
-  | Poison
-  | Fire
-  | Flying
-  | Water
-  | Bug
-  | Normal
-  | Electric
-  | Ground
-  | Fairy
-  | Fighting
-  | Psychic
-  | Rock
-  | Ice
-  | Dragon
-  | Ghost
-  | NoneType
-
 let get_tipe_from_species species =
   match species with
   | "Bulbasaur" -> (Grass, Poison)
@@ -288,6 +269,106 @@ let get_tipe_from_species species =
   | "Dragonite" -> (Dragon, Flying)
   | "Mewtwo" -> (Psychic, NoneType)
   | "Mew" -> (Psychic, NoneType)
+  | "Chikorita" -> (Grass, NoneType)
+  | "Bayleef" -> (Grass, NoneType)
+  | "Meganium" -> (Grass, NoneType)
+  | "Cyndaquil" -> (Fire, NoneType)
+  | "Quilava" -> (Fire, NoneType)
+  | "Typhlosion" -> (Fire, NoneType)
+  | "Totodile" -> (Water, NoneType)
+  | "Croconaw" -> (Water, NoneType)
+  | "Feraligatr" -> (Water, NoneType)
+  | "Sentret" -> (Normal, NoneType)
+  | "Furret" -> (Normal, NoneType)
+  | "Hoothoot" -> (Normal, Flying)
+  | "Noctowl" -> (Normal, Flying)
+  | "Ledyba" -> (Bug, Flying)
+  | "Ledian" -> (Bug, Flying)
+  | "Spinarak" -> (Bug, Poison)
+  | "Ariados" -> (Bug, Poison)
+  | "Crobat" -> (Poison, Flying)
+  | "Chinchou" -> (Water, Electric)
+  | "Lanturn" -> (Water, Electric)
+  | "Pichu" -> (Electric, NoneType)
+  | "Cleffa" -> (Fairy, NoneType)
+  | "Igglybuff" -> (Normal, Fairy)
+  | "Togepi" -> (Fairy, NoneType)
+  | "Togetic" -> (Fairy, Flying)
+  | "Natu" -> (Psychic, Flying)
+  | "Xatu" -> (Psychic, Flying)
+  | "Mareep" -> (Electric, NoneType)
+  | "Flaaffy" -> (Electric, NoneType)
+  | "Ampharos" -> (Electric, NoneType)
+  | "Bellossom" -> (Grass, NoneType)
+  | "Marill" -> (Water, Fairy)
+  | "Azumarill" -> (Water, Fairy)
+  | "Sudowoodo" -> (Rock, NoneType)
+  | "Politoed" -> (Water, NoneType)
+  | "Hoppip" -> (Grass, Flying)
+  | "Skiploom" -> (Grass, Flying)
+  | "Jumpluff" -> (Grass, Flying)
+  | "Aipom" -> (Normal, NoneType)
+  | "Sunkern" -> (Grass, NoneType)
+  | "Sunflora" -> (Grass, NoneType)
+  | "Yanma" -> (Bug, Flying)
+  | "Wooper" -> (Water, Ground)
+  | "Quagsire" -> (Water, Ground)
+  | "Espeon" -> (Psychic, NoneType)
+  | "Umbreon" -> (Dark, NoneType)
+  | "Murkrow" -> (Dark, Flying)
+  | "Slowking" -> (Water, Psychic)
+  | "Misdreavus" -> (Ghost, NoneType)
+  | "Unown" -> (Psychic, NoneType)
+  | "Wobbuffet" -> (Psychic, NoneType)
+  | "Girafarig" -> (Normal, Psychic)
+  | "Pineco" -> (Bug, NoneType)
+  | "Forretress" -> (Bug, Steel)
+  | "Dunsparce" -> (Normal, NoneType)
+  | "Gligar" -> (Ground, Flying)
+  | "Steelix" -> (Steel, Ground)
+  | "Snubbull" -> (Fairy, NoneType)
+  | "Granbull" -> (Fairy, NoneType)
+  | "Qwilfish" -> (Water, Poison)
+  | "Scizor" -> (Bug, Steel)
+  | "Shuckle" -> (Bug, Rock)
+  | "Heracross" -> (Bug, Fighting)
+  | "Sneasel" -> (Dark, Ice)
+  | "Teddiursa" -> (Normal, NoneType)
+  | "Ursaring" -> (Normal, NoneType)
+  | "Slugma" -> (Fire, NoneType)
+  | "Magcargo" -> (Fire, Rock)
+  | "Swinub" -> (Ice, Ground)
+  | "Piloswine" -> (Ice, Ground)
+  | "Corsola" -> (Water, Rock)
+  | "Remoraid" -> (Water, NoneType)
+  | "Octillery" -> (Water, NoneType)
+  | "Delibird" -> (Ice, Flying)
+  | "Mantine" -> (Water, Flying)
+  | "Skarmory" -> (Steel, Flying)
+  | "Houndour" -> (Dark, Fire)
+  | "Houndoom" -> (Dark, Fire)
+  | "Kingdra" -> (Water, Dragon)
+  | "Phanpy" -> (Ground, NoneType)
+  | "Donphan" -> (Ground, NoneType)
+  | "Porygon2" -> (Normal, NoneType)
+  | "Stantler" -> (Normal, NoneType)
+  | "Smeargle" -> (Normal, NoneType)
+  | "Tyrogue" -> (Fighting, NoneType)
+  | "Hitmontop" -> (Fighting, NoneType)
+  | "Smoochum" -> (Ice, Psychic)
+  | "Elekid" -> (Electric, NoneType)
+  | "Magby" -> (Fire, NoneType)
+  | "Miltank" -> (Normal, NoneType)
+  | "Blissey" -> (Normal, NoneType)
+  | "Raikou" -> (Electric, NoneType)
+  | "Entei" -> (Fire, NoneType)
+  | "Suicune" -> (Water, NoneType)
+  | "Larvitar" -> (Rock, Ground)
+  | "Pupitar" -> (Rock, Ground)
+  | "Tyranitar" -> (Rock, Dark)
+  | "Lugia" -> (Psychic, Flying)
+  | "Ho-oh" -> (Fire, Flying)
+  | "Celebi" -> (Psychic, Grass)
   | _ -> (Normal, NoneType)
 
 let get_stats_from_species species = zero_stats
