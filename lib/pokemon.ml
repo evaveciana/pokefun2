@@ -5,6 +5,8 @@ type stats = {
   def : int;
   spdef : int;
   spd : int;
+  acc : int;
+  eva : int;
 }
 
 type tipe =
@@ -28,32 +30,37 @@ type tipe =
   | Fairy
   | NoneType
 
-type nature =
-  | Hardy
-  | Lonely
-  | Brave
-  | Adamant
-  | Naughty
-  | Bold
-  | Docile
-  | Relaxed
-  | Impish
-  | Lax
-  | Timid
-  | Hasty
-  | Serious
-  | Jolly
-  | Naive
-  | Modest
-  | Mild
-  | Quiet
-  | Bashful
-  | Rash
-  | Calm
-  | Gentle
-  | Sassy
-  | Careful
-  | Quirky
+(* type nature = | Hardy | Lonely | Brave | Adamant | Naughty | Bold | Docile |
+   Relaxed | Impish | Lax | Timid | Hasty | Serious | Jolly | Naive | Modest |
+   Mild | Quiet | Bashful | Rash | Calm | Gentle | Sassy | Careful | Quirky *)
+
+let valid_natures =
+  [
+    "lonely";
+    "brave";
+    "adamant";
+    "naughty";
+    "bold";
+    "docile";
+    "relaxed";
+    "impish";
+    "lax";
+    "timid";
+    "hasty";
+    "serious";
+    "jolly";
+    "naive";
+    "modest";
+    "mild";
+    "quiet";
+    "bashful";
+    "rash";
+    "calm";
+    "gentle";
+    "sassy";
+    "careful";
+    "quirky";
+  ]
 
 type damage_class =
   | Status
@@ -96,10 +103,13 @@ type t = {
   moves : move list;
   level : int;
   ailment : ailment;
-  nature : nature;
+  nature : string;
 }
 
-let zero_stats = { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0 }
+exception BadPokemon
+
+let zero_stats =
+  { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
 
 let basic_move =
   {
@@ -133,10 +143,109 @@ let spatk p = (cur_stats p).spatk
 let def p = (cur_stats p).def
 let spdef p = (cur_stats p).spdef
 let spd p = (cur_stats p).spd
-let attack attacker defender move = create "" 1
-let apply_status_effect p stat_name num_stages = create "" 1
-let get_stats_from_species species = zero_stats
-let calc_stats base_stats nature level = zero_stats
+
+let get_multipliers_by_nature n =
+  match n with
+  | "lonely" -> (1.0, 1.1, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "adamant" -> (1.0, 1.1, 1.0, 0.9, 1.0, 1.0, 1.0, 1.0)
+  | "naughty" -> (1.0, 1.1, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0)
+  | "brave" -> (1.0, 1.1, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0)
+  | "bold" -> (1.0, 0.9, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "impish" -> (1.0, 1.0, 1.1, 0.9, 1.0, 1.0, 1.0, 1.0)
+  | "lax" -> (1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.0, 1.0)
+  | "relaxed" -> (1.0, 1.0, 1.1, 1.0, 1.0, 0.9, 1.0, 1.0)
+  | "modest" -> (1.0, 0.9, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0)
+  | "mild" -> (1.0, 1.0, 0.9, 1.1, 1.0, 1.0, 1.0, 1.0)
+  | "rash" -> (1.0, 1.0, 1.0, 1.1, 0.9, 1.0, 1.0, 1.0)
+  | "quiet" -> (1.0, 1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.0)
+  | "calm" -> (1.0, 0.9, 1.0, 1.0, 1.1, 1.0, 1.0, 1.0)
+  | "gentle" -> (1.0, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0, 1.0)
+  | "sassy" -> (1.0, 1.0, 1.0, 1.0, 1.1, 0.9, 1.0, 1.0)
+  | "careful" -> (1.0, 1.0, 1.0, 0.9, 1.1, 1.0, 1.0, 1.0)
+  | "timid" -> (1.0, 0.9, 1.0, 1.0, 1.0, 1.1, 1.0, 1.0)
+  | "hasty" -> (1.0, 1.0, 0.9, 1.0, 1.0, 1.1, 1.0, 1.0)
+  | "jolly" -> (1.0, 1.0, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0)
+  | "naive" -> (1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 1.0, 1.0)
+  | "hardy" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "docile" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "serious" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "bashful" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "quirky" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | _ -> failwith "Unknown nature"
+
+let get_multipliers_by_ailment = function
+  | Burned -> (1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | Paralyzed -> (1.0, 1.0, 1.0, 1.0, 1.0, 0.25, 1.0, 1.0)
+  | _ -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+
+let get_multipliers_by_stat_stages stat_stages =
+  let multiplier_by_stat_stage = function
+    | -6 -> 0.25
+    | -5 -> 2. /. 7.
+    | -4 -> 2. /. 6.
+    | -3 -> 0.4
+    | -2 -> 0.5
+    | -1 -> 2. /. 3.
+    | 0 -> 1.
+    | 1 -> 1.5
+    | 2 -> 2.
+    | 3 -> 2.5
+    | 4 -> 3.
+    | 5 -> 3.5
+    | 6 -> 4.
+    | _ -> failwith "Stat Multiplier out of range"
+  in
+  ( multiplier_by_stat_stage stat_stages.hp,
+    multiplier_by_stat_stage stat_stages.atk,
+    multiplier_by_stat_stage stat_stages.def,
+    multiplier_by_stat_stage stat_stages.spatk,
+    multiplier_by_stat_stage stat_stages.spdef,
+    multiplier_by_stat_stage stat_stages.spd,
+    multiplier_by_stat_stage stat_stages.acc,
+    multiplier_by_stat_stage stat_stages.eva )
+
+let apply_multiplier stat multiplier =
+  int_of_float (float_of_int stat *. multiplier)
+
+let apply_multipliers cur_stats
+    ( hp_mult,
+      atk_mult,
+      def_mult,
+      spatk_mult,
+      spdef_mult,
+      spd_mult,
+      acc_mult,
+      eva_mult ) =
+  {
+    hp = apply_multiplier cur_stats.hp hp_mult;
+    atk = apply_multiplier cur_stats.atk atk_mult;
+    spatk = apply_multiplier cur_stats.spatk spatk_mult;
+    def = apply_multiplier cur_stats.def def_mult;
+    spdef = apply_multiplier cur_stats.spdef spdef_mult;
+    spd = apply_multiplier cur_stats.spd spd_mult;
+    acc = apply_multiplier cur_stats.spd acc_mult;
+    eva = apply_multiplier cur_stats.spd eva_mult;
+  }
+
+let rec apply_multipliers_list cur_stats multipliers =
+  match multipliers with
+  | [] -> cur_stats
+  | h :: t -> apply_multipliers_list (apply_multipliers cur_stats h) t
+
+let calc_current_stats base_stats nature level ailment stat_stages =
+  let stat_aux base_stat level = ((2 * base_stat) + 31 + 21) * level / 100 in
+  apply_multipliers_list
+    {
+      hp = stat_aux base_stats.hp level + level + 10;
+      atk = stat_aux base_stats.hp level + 5;
+      def = stat_aux base_stats.hp level + 5;
+      spatk = stat_aux base_stats.hp level + 5;
+      spdef = stat_aux base_stats.hp level + 5;
+      spd = stat_aux base_stats.hp level + 5;
+      acc = 100;
+      eva = 100;
+    }
+    [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
 
 type p_info = {
   tipe : tipe * tipe;
@@ -376,7 +485,16 @@ let get_info_from_species species =
       {
         tipe = (Grass, Poison);
         stats =
-          { hp = 45; atk = 49; def = 49; spatk = 65; spdef = 65; spd = 45 };
+          {
+            hp = 45;
+            atk = 49;
+            def = 49;
+            spatk = 65;
+            spdef = 65;
+            spd = 45;
+            acc = 0;
+            eva = 0;
+          };
         moves =
           [
             swords_dance;
@@ -392,7 +510,16 @@ let get_info_from_species species =
       {
         tipe = (Grass, Poison);
         stats =
-          { hp = 60; atk = 62; def = 63; spatk = 80; spdef = 80; spd = 60 };
+          {
+            hp = 60;
+            atk = 62;
+            def = 63;
+            spatk = 80;
+            spdef = 80;
+            spd = 60;
+            acc = 0;
+            eva = 0;
+          };
         moves =
           [
             swords_dance;
@@ -408,7 +535,16 @@ let get_info_from_species species =
       {
         tipe = (Grass, Poison);
         stats =
-          { hp = 80; atk = 82; def = 83; spatk = 100; spdef = 100; spd = 80 };
+          {
+            hp = 80;
+            atk = 82;
+            def = 83;
+            spatk = 100;
+            spdef = 100;
+            spd = 80;
+            acc = 0;
+            eva = 0;
+          };
         moves =
           [
             swords_dance;
@@ -424,7 +560,16 @@ let get_info_from_species species =
       {
         tipe = (Fire, NoneType);
         stats =
-          { hp = 39; atk = 52; def = 43; spatk = 60; spdef = 50; spd = 65 };
+          {
+            hp = 39;
+            atk = 52;
+            def = 43;
+            spatk = 60;
+            spdef = 50;
+            spd = 65;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
         possible_abilities = [ "blaze"; "solar-power" ];
       }
@@ -432,7 +577,16 @@ let get_info_from_species species =
       {
         tipe = (Fire, NoneType);
         stats =
-          { hp = 58; atk = 64; def = 58; spatk = 80; spdef = 65; spd = 80 };
+          {
+            hp = 58;
+            atk = 64;
+            def = 58;
+            spatk = 80;
+            spdef = 65;
+            spd = 80;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
         possible_abilities = [ "blaze"; "solar-power" ];
       }
@@ -440,7 +594,16 @@ let get_info_from_species species =
       {
         tipe = (Fire, Flying);
         stats =
-          { hp = 78; atk = 84; def = 78; spatk = 109; spdef = 85; spd = 100 };
+          {
+            hp = 78;
+            atk = 84;
+            def = 78;
+            spatk = 109;
+            spdef = 85;
+            spd = 100;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
         possible_abilities = [ "blaze"; "solar-power" ];
       }
@@ -448,7 +611,16 @@ let get_info_from_species species =
       {
         tipe = (Water, NoneType);
         stats =
-          { hp = 44; atk = 48; def = 65; spatk = 50; spdef = 64; spd = 43 };
+          {
+            hp = 44;
+            atk = 48;
+            def = 65;
+            spatk = 50;
+            spdef = 64;
+            spd = 43;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ water_gun; tackle; tail_whip; ice_beam ];
         possible_abilities = [ "torrent"; "rain-dish" ];
       }
@@ -456,7 +628,16 @@ let get_info_from_species species =
       {
         tipe = (Water, NoneType);
         stats =
-          { hp = 59; atk = 63; def = 80; spatk = 65; spdef = 80; spd = 58 };
+          {
+            hp = 59;
+            atk = 63;
+            def = 80;
+            spatk = 65;
+            spdef = 80;
+            spd = 58;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ water_gun; tackle; tail_whip; ice_beam ];
         possible_abilities = [ "torrent"; "rain-dish" ];
       }
@@ -464,8 +645,60 @@ let get_info_from_species species =
       {
         tipe = (Water, NoneType);
         stats =
-          { hp = 79; atk = 83; def = 100; spatk = 85; spdef = 105; spd = 78 };
+          {
+            hp = 79;
+            atk = 83;
+            def = 100;
+            spatk = 85;
+            spdef = 105;
+            spd = 78;
+            acc = 0;
+            eva = 0;
+          };
         moves = [ water_gun; tackle; tail_whip; ice_beam ];
         possible_abilities = [ "torrent"; "rain-dish" ];
       }
-  | _ -> failwith "Unknown Pokemon"
+  | _ -> raise BadPokemon
+
+let create name mvlst lvl nat =
+  let info = get_info_from_species name in
+  (*Raises BadPokemon if not a valid species*)
+  let rec check_mvlst = function
+    | [] -> true
+    | h :: t -> List.mem h info.moves && check_mvlst t
+  in
+  if
+    lvl < 1 || lvl > 100
+    || (not (check_mvlst mvlst))
+    || not (List.mem nat valid_natures)
+  then raise BadPokemon
+  else
+    {
+      species = name;
+      is_dual_type = false;
+      tipe = info.tipe;
+      base_stats = info.stats;
+      cur_stats = calc_current_stats info.stats nat lvl Healthy zero_stats;
+      stat_stages = zero_stats;
+      moves = mvlst;
+      level = lvl;
+      ailment = Healthy;
+      nature = String.lowercase_ascii nat;
+    }
+
+let get_moves str = (get_info_from_species str).moves
+
+let attack a d move =
+  let attacker = create a.species a.moves a.level a.nature in
+  let defender = create d.species d.moves d.level d.nature in
+  (attacker, defender)
+(*Change to actually calculate new stats*)
+
+let apply_status_effect p stat_name num_stages =
+  create p.species p.moves p.level p.nature
+(*Change to actually apply status effect*)
+
+let add_pokemon_move (pokemon : t) (new_move : move) : t =
+  if List.length pokemon.moves >= 4 then
+    raise (Failure "A Pokémon can only have up to 4 moves.")
+  else { pokemon with moves = pokemon.moves @ [ new_move ] }

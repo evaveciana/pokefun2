@@ -4,14 +4,20 @@ type stats
 type tipe
 (** type for a Pokemon type *)
 
-type nature
+(* type nature *)
 (** type for a Pokemon's nature *)
 
 type move
 (** type for a Pokemon attack (move)*)
 
+type ailment
+(** type for ailment *)
+
 type t
 (** type of a Pokemon*)
+
+exception BadPokemon
+(**Raised when a user attempts to create a Pokemon with invalid inputs.*)
 
 val zero_stats : stats
 (**Exposed for testing purposes*)
@@ -22,11 +28,12 @@ val basic_move : move
 val basic_tipe : tipe * tipe
 (**Exposed for testing purposes*)
 
-val basic_nature : nature
+(* val basic_nature : nature *)
 (**Exposed for testing purposes*)
 
-val create : string -> int -> t
-(** [create species level] is a [species] pokemon that is level [level] *)
+val create : string -> move list -> int -> string -> t
+(** [create species move_list level nature] is a [species] pokemon that is level
+    [level], has moves [move_list], and nature [nature]*)
 
 val species : t -> string
 (** [species p] is the species of pokemon [p]*)
@@ -82,21 +89,21 @@ val spd : t -> int
 (** [spd p] is the current Speed of pokemon [p], including changes from stat
     stages. *)
 
-val attack : t -> t -> move -> t
+val attack : t -> t -> move -> t * t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
-    pokemon [defender] and returns the resulting defending pokemon *)
+    pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
 val apply_status_effect : t -> string -> int -> t
 (** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
     change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
-(* val get_tipe_from_species : string -> tipe * tipe * [get_tipe_from_species
-   spec] returns the tipes of a [spec] pokemon *)
+val calc_current_stats : stats -> string -> int -> ailment -> stats -> stats
+(** [calc_current_stats base_stats nature level stat_stages] returns the current
+    stats of a pokemon with base stats [base_stats], nature [nature], level
+    [level], with stat stages [stat_stages] Should be called when initializing a
+    pokemon, healing, or leveling up*)
 
-val get_stats_from_species : string -> stats
-(** [get_stats_from_species spec] returns the stats of a [spec] pokemon *)
-
-val calc_stats : stats -> nature -> int -> stats
-(** [calc_stats base_stats nature level] returns the current stats of a pokemon
-    with base stats [base_stats], nature [nature], and level [level] Should be
-    called when initializing a pokemon, healing, or leveling up*)
+val add_pokemon_move : t -> move -> t
+(** [add_pokemon_move pokemon new_move] adds [new_move] to [pokemon]'s list of
+    moves and returns an updated Pokémon with the new move. Raises [failure] if
+    the Pokémon already has 4 moves. *)

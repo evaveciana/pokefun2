@@ -4,7 +4,7 @@ open Pokefun.Pokemon
 let make_stats_test (name, f, input, expected) =
   name >:: fun _ -> assert_equal expected (f input)
 
-let sample_pokemon = create "Bulbasaur" 1
+let sample_pokemon = create "Bulbasaur" [] 1 "hardy"
 
 let pokemon_stats_tests =
   [
@@ -33,14 +33,13 @@ let other_pokemon_tests =
     ( "Current stats" >:: fun _ ->
       assert_equal zero_stats (cur_stats sample_pokemon) );
     ( "Attack" >:: fun _ ->
-      assert_equal (create "" 1)
+      assert_equal
+        (sample_pokemon, sample_pokemon)
         (attack sample_pokemon sample_pokemon basic_move) );
     ( "Apply status effects" >:: fun _ ->
-      assert_equal (create "" 1) (apply_status_effect sample_pokemon "hp" 0) );
-    ( "Get stats from species" >:: fun _ ->
-      assert_equal zero_stats (get_stats_from_species "Bulbasaur") );
-    ( "Calculate stats" >:: fun _ ->
-      assert_equal zero_stats (calc_stats zero_stats basic_nature 1) );
+      assert_equal sample_pokemon (apply_status_effect sample_pokemon "hp" 0) );
+    (* ( "Calculate stats" >:: fun _ -> assert_equal zero_stats (calc_stats
+       zero_stats "hardy" 1) ); *)
   ]
 
 let tests =
@@ -48,3 +47,5 @@ let tests =
   >::: List.flatten [ pokemon_stats_test_cases; other_pokemon_tests ]
 
 let _ = run_test_tt_main tests
+
+(*Idea: make a way to encode a move as a hashcode or something to use in tests*)
