@@ -117,22 +117,6 @@ let basic_move =
   }
 
 let basic_tipe = (Grass, Poison)
-let basic_nature = Hardy
-
-let create name level =
-  {
-    species = name;
-    is_dual_type = false;
-    tipe = (Water, NoneType);
-    base_stats = zero_stats;
-    cur_stats = zero_stats;
-    stat_stages = zero_stats;
-    moves = [];
-    level;
-    ailment = Healthy;
-    nature = Jolly;
-  }
-
 let species p = p.species
 let base_stats p = p.base_stats
 let cur_stats p = p.cur_stats (* Modify with ailment and stat stages *)
