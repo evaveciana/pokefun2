@@ -101,9 +101,23 @@ type t = {
 
 let zero_stats = { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0 }
 
-type testt = { moves : string list }
+let basic_move =
+  {
+    id = 0;
+    name = "";
+    tipe = Water;
+    power = 0;
+    pp = 0;
+    accuracy = 0;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 0;
+    effect_chance = 0;
+  }
 
-let test = { moves = [] }
+let basic_tipe = (Grass, Poison)
+let basic_nature = Hardy
 
 let create name level =
   {
