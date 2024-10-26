@@ -13,17 +13,30 @@ type move
 type t
 (** type of a Pokemon*)
 
+val zero_stats : stats
+(**Exposed for testing purposes*)
+
+val basic_move : move
+(**Exposed for testing purposes*)
+
+val basic_tipe : tipe * tipe
+(**Exposed for testing purposes*)
+
+val basic_nature : nature
+(**Exposed for testing purposes*)
+
 val create : string -> int -> t
 (** [create species level] is a [species] pokemon that is level [level] *)
 
 val species : t -> string
 (** [species p] is the species of pokemon [p]*)
 
-(* val base_stats : t -> stats * [base_stats p] is the base stats of pokemon
-   [p] *)
+val base_stats : t -> stats
+(** [base_stats p] is the base stats of pokemon [p] *)
 
-(* val cur_stats : t -> stats (** [cur_stats p] is the current stats of pokemon
-   [p], including any changes from burn, paralysis, etc.*) *)
+val cur_stats : t -> stats
+(** [cur_stats p] is the current stats of pokemon [p], including any changes
+    from burn, paralysis, etc.*)
 
 val base_hp : t -> int
 (** [base_hp p] is the base HP of pokemon [p]. *)

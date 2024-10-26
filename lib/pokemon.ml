@@ -85,6 +85,12 @@ type t = {
 
 let zero_stats = { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0 }
 
+let basic_move =
+  { name = ""; power = 0; move_type = Water; category = ""; pp = 0 }
+
+let basic_tipe = (Grass, Poison)
+let basic_nature = Hardy
+
 let create name level =
   {
     species = name;
@@ -115,10 +121,11 @@ let def p = (cur_stats p).def
 let spdef p = (cur_stats p).spdef
 let spd p = (cur_stats p).spd
 let attack attacker defender move = create "" 1
+let apply_status_effects p stat_name num_stages = create "" 1
 
 let get_tipe_from_species species =
   match species with
-  | "Bulbasaur" -> (Grass, Poison)          (**Start of Gen I*)
+  | "Bulbasaur" -> (Grass, Poison) (*Start of Gen I*)
   | "Ivysaur" -> (Grass, Poison)
   | "Venusaur" -> (Grass, Poison)
   | "Charmander" -> (Fire, NoneType)
@@ -269,7 +276,7 @@ let get_tipe_from_species species =
   | "Dragonite" -> (Dragon, Flying)
   | "Mewtwo" -> (Psychic, NoneType)
   | "Mew" -> (Psychic, NoneType)
-  | "Chikorita" -> (Grass, NoneType)          (**Start of Gen II*)
+  | "Chikorita" -> (Grass, NoneType) (*Start of Gen II*)
   | "Bayleef" -> (Grass, NoneType)
   | "Meganium" -> (Grass, NoneType)
   | "Cyndaquil" -> (Fire, NoneType)
@@ -369,7 +376,7 @@ let get_tipe_from_species species =
   | "Lugia" -> (Psychic, Flying)
   | "Ho-oh" -> (Fire, Flying)
   | "Celebi" -> (Psychic, Grass)
-  | "Treecko" -> (Grass, NoneType)            (**Start of Gen III*)
+  | "Treecko" -> (Grass, NoneType) (*Start of Gen III*)
   | "Grovyle" -> (Grass, NoneType)
   | "Sceptile" -> (Grass, NoneType)
   | "Torchic" -> (Fire, NoneType)
@@ -506,8 +513,8 @@ let get_tipe_from_species species =
   | "Deoxys (Normal)" -> (Psychic, NoneType)
   | "Deoxys (Attack)" -> (Psychic, NoneType)
   | "Deoxys (Defense)" -> (Psychic, NoneType)
-  | "Deoxys (Speed)" -> (Psychic, NoneType)                                          
-  | "Turtwig" -> (Grass, NoneType)                (** Start of Gen IV*)
+  | "Deoxys (Speed)" -> (Psychic, NoneType)
+  | "Turtwig" -> (Grass, NoneType) (*Start of Gen IV*)
   | "Grotle" -> (Grass, NoneType)
   | "Torterra" -> (Grass, Ground)
   | "Chimchar" -> (Fire, NoneType)
