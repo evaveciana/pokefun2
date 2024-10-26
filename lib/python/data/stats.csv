@@ -1,0 +1,8 @@
+id,damage_class_id,identifier,is_battle_only,game_index
+1,,hp,0,1
+2,2,atk,0,2
+3,2,def,0,3
+4,3,spatk,0,5
+5,3,spdef,0,6
+6,,spd,0,4
+

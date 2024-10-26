@@ -8,24 +8,24 @@ type stats = {
 }
 
 type tipe =
-  | Water
+  | Normal
   | Fire
+  | Water
   | Grass
   | Electric
+  | Ice
   | Fighting
+  | Poison
+  | Ground
   | Flying
   | Psychic
-  | Ghost
-  | Normal
-  | Fairy
-  | Steel
-  | Ice
-  | Dark
-  | Dragon
   | Bug
   | Rock
-  | Ground
-  | Poison
+  | Ghost
+  | Dark
+  | Dragon
+  | Steel
+  | Fairy
   | NoneType
 
 type nature =
@@ -55,12 +55,27 @@ type nature =
   | Careful
   | Quirky
 
+type damage_class =
+  | Status
+  | Physical
+  | Special
+
+type target =
+  | Self
+  | Enemy
+
 type move = {
+  id : int;
   name : string;
+  tipe : tipe;
   power : int;
-  move_type : tipe;
-  category : string;
   pp : int;
+  accuracy : int;
+  priority : int;
+  target : target;
+  damage_class : damage_class;
+  effect_id : int;
+  effect_chance : int;
 }
 
 type ailment =
@@ -81,9 +96,14 @@ type t = {
   moves : move list;
   level : int;
   ailment : ailment;
+  nature : nature;
 }
 
 let zero_stats = { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0 }
+
+type testt = { moves : string list }
+
+let test = { moves = [] }
 
 let create name level =
   {
@@ -96,6 +116,7 @@ let create name level =
     moves = [];
     level;
     ailment = Healthy;
+    nature = Jolly;
   }
 
 let species p = p.species
@@ -115,180 +136,338 @@ let def p = (cur_stats p).def
 let spdef p = (cur_stats p).spdef
 let spd p = (cur_stats p).spd
 let attack attacker defender move = create "" 1
-
-type pokemon_type =
-  | Grass
-  | Poison
-  | Fire
-  | Flying
-  | Water
-  | Bug
-  | Normal
-  | Electric
-  | Ground
-  | Fairy
-  | Fighting
-  | Psychic
-  | Rock
-  | Ice
-  | Dragon
-  | Ghost
-  | NoneType
-
-let get_tipe_from_species species =
-  match species with
-  | "Bulbasaur" -> (Grass, Poison)
-  | "Ivysaur" -> (Grass, Poison)
-  | "Venusaur" -> (Grass, Poison)
-  | "Charmander" -> (Fire, NoneType)
-  | "Charmeleon" -> (Fire, NoneType)
-  | "Charizard" -> (Fire, Flying)
-  | "Squirtle" -> (Water, NoneType)
-  | "Wartortle" -> (Water, NoneType)
-  | "Blastoise" -> (Water, NoneType)
-  | "Caterpie" -> (Bug, NoneType)
-  | "Metapod" -> (Bug, NoneType)
-  | "Butterfree" -> (Bug, Flying)
-  | "Weedle" -> (Bug, Poison)
-  | "Kakuna" -> (Bug, Poison)
-  | "Beedrill" -> (Bug, Poison)
-  | "Pidgey" -> (Normal, Flying)
-  | "Pidgeotto" -> (Normal, Flying)
-  | "Pidgeot" -> (Normal, Flying)
-  | "Rattata" -> (Normal, NoneType)
-  | "Raticate" -> (Normal, NoneType)
-  | "Spearow" -> (Normal, Flying)
-  | "Fearow" -> (Normal, Flying)
-  | "Ekans" -> (Poison, NoneType)
-  | "Arbok" -> (Poison, NoneType)
-  | "Pikachu" -> (Electric, NoneType)
-  | "Raichu" -> (Electric, NoneType)
-  | "Sandshrew" -> (Ground, NoneType)
-  | "Sandslash" -> (Ground, NoneType)
-  | "Nidoran♀" -> (Poison, NoneType)
-  | "Nidorina" -> (Poison, NoneType)
-  | "Nidoqueen" -> (Poison, Ground)
-  | "Nidoran♂" -> (Poison, NoneType)
-  | "Nidorino" -> (Poison, NoneType)
-  | "Nidoking" -> (Poison, Ground)
-  | "Clefairy" -> (Fairy, NoneType)
-  | "Clefable" -> (Fairy, NoneType)
-  | "Vulpix" -> (Fire, NoneType)
-  | "Ninetales" -> (Fire, NoneType)
-  | "Jigglypuff" -> (Normal, Fairy)
-  | "Wigglytuff" -> (Normal, Fairy)
-  | "Zubat" -> (Poison, Flying)
-  | "Golbat" -> (Poison, Flying)
-  | "Oddish" -> (Grass, Poison)
-  | "Gloom" -> (Grass, Poison)
-  | "Vileplume" -> (Grass, Poison)
-  | "Paras" -> (Bug, Grass)
-  | "Parasect" -> (Bug, Grass)
-  | "Venonat" -> (Bug, Poison)
-  | "Venomoth" -> (Bug, Poison)
-  | "Diglett" -> (Ground, NoneType)
-  | "Dugtrio" -> (Ground, NoneType)
-  | "Meowth" -> (Normal, NoneType)
-  | "Persian" -> (Normal, NoneType)
-  | "Psyduck" -> (Water, NoneType)
-  | "Golduck" -> (Water, NoneType)
-  | "Mankey" -> (Fighting, NoneType)
-  | "Primeape" -> (Fighting, NoneType)
-  | "Growlithe" -> (Fire, NoneType)
-  | "Arcanine" -> (Fire, NoneType)
-  | "Poliwag" -> (Water, NoneType)
-  | "Poliwhirl" -> (Water, NoneType)
-  | "Poliwrath" -> (Water, Fighting)
-  | "Abra" -> (Psychic, NoneType)
-  | "Kadabra" -> (Psychic, NoneType)
-  | "Alakazam" -> (Psychic, NoneType)
-  | "Machop" -> (Fighting, NoneType)
-  | "Machoke" -> (Fighting, NoneType)
-  | "Machamp" -> (Fighting, NoneType)
-  | "Bellsprout" -> (Grass, Poison)
-  | "Weepinbell" -> (Grass, Poison)
-  | "Victreebel" -> (Grass, Poison)
-  | "Tentacool" -> (Water, Poison)
-  | "Tentacruel" -> (Water, Poison)
-  | "Geodude" -> (Rock, Ground)
-  | "Graveler" -> (Rock, Ground)
-  | "Golem" -> (Rock, Ground)
-  | "Ponyta" -> (Fire, NoneType)
-  | "Rapidash" -> (Fire, NoneType)
-  | "Slowpoke" -> (Water, Psychic)
-  | "Slowbro" -> (Water, Psychic)
-  | "Magnemite" -> (Electric, NoneType)
-  | "Magneton" -> (Electric, NoneType)
-  | "Farfetch'd" -> (Normal, Flying)
-  | "Doduo" -> (Normal, Flying)
-  | "Dodrio" -> (Normal, Flying)
-  | "Seel" -> (Water, NoneType)
-  | "Dewgong" -> (Water, Ice)
-  | "Grimer" -> (Poison, NoneType)
-  | "Muk" -> (Poison, NoneType)
-  | "Shellder" -> (Water, NoneType)
-  | "Cloyster" -> (Water, Ice)
-  | "Gastly" -> (Ghost, Poison)
-  | "Haunter" -> (Ghost, Poison)
-  | "Gengar" -> (Ghost, Poison)
-  | "Onix" -> (Rock, Ground)
-  | "Drowzee" -> (Psychic, NoneType)
-  | "Hypno" -> (Psychic, NoneType)
-  | "Krabby" -> (Water, NoneType)
-  | "Kingler" -> (Water, NoneType)
-  | "Voltorb" -> (Electric, NoneType)
-  | "Electrode" -> (Electric, NoneType)
-  | "Exeggcute" -> (Grass, Psychic)
-  | "Exeggutor" -> (Grass, Psychic)
-  | "Cubone" -> (Ground, NoneType)
-  | "Marowak" -> (Ground, NoneType)
-  | "Hitmonlee" -> (Fighting, NoneType)
-  | "Hitmonchan" -> (Fighting, NoneType)
-  | "Lickitung" -> (Normal, NoneType)
-  | "Koffing" -> (Poison, NoneType)
-  | "Weezing" -> (Poison, NoneType)
-  | "Rhyhorn" -> (Ground, Rock)
-  | "Rhydon" -> (Ground, Rock)
-  | "Chansey" -> (Normal, NoneType)
-  | "Tangela" -> (Grass, NoneType)
-  | "Kangaskhan" -> (Normal, NoneType)
-  | "Horsea" -> (Water, NoneType)
-  | "Seadra" -> (Water, NoneType)
-  | "Goldeen" -> (Water, NoneType)
-  | "Seaking" -> (Water, NoneType)
-  | "Staryu" -> (Water, NoneType)
-  | "Starmie" -> (Water, Psychic)
-  | "Mr. Mime" -> (Psychic, Fairy)
-  | "Scyther" -> (Bug, Flying)
-  | "Jynx" -> (Ice, Psychic)
-  | "Electabuzz" -> (Electric, NoneType)
-  | "Magmar" -> (Fire, NoneType)
-  | "Pinsir" -> (Bug, NoneType)
-  | "Tauros" -> (Normal, NoneType)
-  | "Magikarp" -> (Water, NoneType)
-  | "Gyarados" -> (Water, Flying)
-  | "Lapras" -> (Water, Ice)
-  | "Ditto" -> (Normal, NoneType)
-  | "Eevee" -> (Normal, NoneType)
-  | "Vaporeon" -> (Water, NoneType)
-  | "Jolteon" -> (Electric, NoneType)
-  | "Flareon" -> (Fire, NoneType)
-  | "Porygon" -> (Normal, NoneType)
-  | "Omanyte" -> (Rock, Water)
-  | "Omastar" -> (Rock, Water)
-  | "Kabuto" -> (Rock, Water)
-  | "Kabutops" -> (Rock, Water)
-  | "Aerodactyl" -> (Rock, Flying)
-  | "Snorlax" -> (Normal, NoneType)
-  | "Articuno" -> (Ice, Flying)
-  | "Zapdos" -> (Electric, Flying)
-  | "Moltres" -> (Fire, Flying)
-  | "Dratini" -> (Dragon, NoneType)
-  | "Dragonair" -> (Dragon, NoneType)
-  | "Dragonite" -> (Dragon, Flying)
-  | "Mewtwo" -> (Psychic, NoneType)
-  | "Mew" -> (Psychic, NoneType)
-  | _ -> (Normal, NoneType)
-
+let apply_status_effect p stat_name num_stages = create "" 1
 let get_stats_from_species species = zero_stats
 let calc_stats base_stats nature level = zero_stats
+
+type p_info = {
+  tipe : tipe * tipe;
+  stats : stats;
+  moves : move list;
+  possible_abilities : string list;
+}
+
+let swords_dance =
+  {
+    id = 14;
+    name = "Swords Dance";
+    tipe = Normal;
+    power = 0;
+    pp = 20;
+    accuracy = 0;
+    priority = 0;
+    target = Self;
+    damage_class = Status;
+    effect_id = 51;
+    effect_chance = 0;
+  }
+
+let razor_leaf =
+  {
+    id = 75;
+    name = "Razor Leaf";
+    tipe = Grass;
+    power = 55;
+    pp = 25;
+    accuracy = 95;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 44;
+    effect_chance = 0;
+  }
+
+let tackle =
+  {
+    id = 33;
+    name = "Tackle";
+    tipe = Normal;
+    power = 40;
+    pp = 35;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 1;
+    effect_chance = 0;
+  }
+
+let vine_whip =
+  {
+    id = 22;
+    name = "Vine Whip";
+    tipe = Grass;
+    power = 45;
+    pp = 25;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 1;
+    effect_chance = 0;
+  }
+
+let poison_powder =
+  {
+    id = 77;
+    name = "Poison Powder";
+    tipe = Poison;
+    power = 0;
+    pp = 35;
+    accuracy = 75;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 67;
+    effect_chance = 0;
+  }
+
+let sleep_powder =
+  {
+    id = 79;
+    name = "Sleep Powder";
+    tipe = Grass;
+    power = 0;
+    pp = 15;
+    accuracy = 75;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 2;
+    effect_chance = 0;
+  }
+
+let slash =
+  {
+    id = 163;
+    name = "Slash";
+    tipe = Normal;
+    power = 70;
+    pp = 20;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 44;
+    effect_chance = 0;
+  }
+
+let flamethrower =
+  {
+    id = 53;
+    name = "Flamethrower";
+    tipe = Fire;
+    power = 90;
+    pp = 15;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Special;
+    effect_id = 5;
+    effect_chance = 10;
+  }
+
+let ember =
+  {
+    id = 52;
+    name = "Ember";
+    tipe = Fire;
+    power = 40;
+    pp = 25;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Special;
+    effect_id = 5;
+    effect_chance = 10;
+  }
+
+let scratch =
+  {
+    id = 10;
+    name = "Scratch";
+    tipe = Normal;
+    power = 40;
+    pp = 35;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 1;
+    effect_chance = 0;
+  }
+
+let growl =
+  {
+    id = 45;
+    name = "Growl";
+    tipe = Normal;
+    power = 0;
+    pp = 40;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 19;
+    effect_chance = 0;
+  }
+
+let smokescreen =
+  {
+    id = 108;
+    name = "Smokescreen";
+    tipe = Normal;
+    power = 0;
+    pp = 20;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 24;
+    effect_chance = 0;
+  }
+
+let water_gun =
+  {
+    id = 55;
+    name = "Water Gun";
+    tipe = Water;
+    power = 40;
+    pp = 25;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Special;
+    effect_id = 1;
+    effect_chance = 0;
+  }
+
+let tail_whip =
+  {
+    id = 39;
+    name = "Tail Whip";
+    tipe = Normal;
+    power = 0;
+    pp = 30;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 20;
+    effect_chance = 0;
+  }
+
+let ice_beam =
+  {
+    id = 58;
+    name = "Ice Beam";
+    tipe = Ice;
+    power = 90;
+    pp = 10;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Special;
+    effect_id = 6;
+    effect_chance = 10;
+  }
+
+let get_info_from_species species =
+  match species with
+  | "bulbasaur" ->
+      {
+        tipe = (Grass, Poison);
+        stats =
+          { hp = 45; atk = 49; def = 49; spatk = 65; spdef = 65; spd = 45 };
+        moves =
+          [
+            swords_dance;
+            razor_leaf;
+            tackle;
+            vine_whip;
+            poison_powder;
+            sleep_powder;
+          ];
+        possible_abilities = [ "overgrow"; "chlorophyll" ];
+      }
+  | "ivysaur" ->
+      {
+        tipe = (Grass, Poison);
+        stats =
+          { hp = 60; atk = 62; def = 63; spatk = 80; spdef = 80; spd = 60 };
+        moves =
+          [
+            swords_dance;
+            razor_leaf;
+            tackle;
+            vine_whip;
+            poison_powder;
+            sleep_powder;
+          ];
+        possible_abilities = [ "overgrow"; "chlorophyll" ];
+      }
+  | "venusaur" ->
+      {
+        tipe = (Grass, Poison);
+        stats =
+          { hp = 80; atk = 82; def = 83; spatk = 100; spdef = 100; spd = 80 };
+        moves =
+          [
+            swords_dance;
+            razor_leaf;
+            tackle;
+            vine_whip;
+            poison_powder;
+            sleep_powder;
+          ];
+        possible_abilities = [ "overgrow"; "chlorophyll" ];
+      }
+  | "charmander" ->
+      {
+        tipe = (Fire, NoneType);
+        stats =
+          { hp = 39; atk = 52; def = 43; spatk = 60; spdef = 50; spd = 65 };
+        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
+        possible_abilities = [ "blaze"; "solar-power" ];
+      }
+  | "charmeleon" ->
+      {
+        tipe = (Fire, NoneType);
+        stats =
+          { hp = 58; atk = 64; def = 58; spatk = 80; spdef = 65; spd = 80 };
+        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
+        possible_abilities = [ "blaze"; "solar-power" ];
+      }
+  | "charizard" ->
+      {
+        tipe = (Fire, Flying);
+        stats =
+          { hp = 78; atk = 84; def = 78; spatk = 109; spdef = 85; spd = 100 };
+        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
+        possible_abilities = [ "blaze"; "solar-power" ];
+      }
+  | "squirtle" ->
+      {
+        tipe = (Water, NoneType);
+        stats =
+          { hp = 44; atk = 48; def = 65; spatk = 50; spdef = 64; spd = 43 };
+        moves = [ water_gun; tackle; tail_whip; ice_beam ];
+        possible_abilities = [ "torrent"; "rain-dish" ];
+      }
+  | "wartortle" ->
+      {
+        tipe = (Water, NoneType);
+        stats =
+          { hp = 59; atk = 63; def = 80; spatk = 65; spdef = 80; spd = 58 };
+        moves = [ water_gun; tackle; tail_whip; ice_beam ];
+        possible_abilities = [ "torrent"; "rain-dish" ];
+      }
+  | "blastoise" ->
+      {
+        tipe = (Water, NoneType);
+        stats =
+          { hp = 79; atk = 83; def = 100; spatk = 85; spdef = 105; spd = 78 };
+        moves = [ water_gun; tackle; tail_whip; ice_beam ];
+        possible_abilities = [ "torrent"; "rain-dish" ];
+      }
+  | _ -> failwith "Unknown Pokemon"

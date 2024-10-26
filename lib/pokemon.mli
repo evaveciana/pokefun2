@@ -73,12 +73,12 @@ val attack : t -> t -> move -> t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting defending pokemon *)
 
-val apply_status_effects : t -> string -> int -> t
+val apply_status_effect : t -> string -> int -> t
 (** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
     change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
-val get_tipe_from_species : string -> tipe * tipe
-(** [get_tipe_from_species spec] returns the tipes of a [spec] pokemon *)
+(* val get_tipe_from_species : string -> tipe * tipe * [get_tipe_from_species
+   spec] returns the tipes of a [spec] pokemon *)
 
 val get_stats_from_species : string -> stats
 (** [get_stats_from_species spec] returns the stats of a [spec] pokemon *)
