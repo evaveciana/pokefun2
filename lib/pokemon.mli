@@ -7,6 +7,15 @@ type tipe
 (* type nature *)
 (** type for a Pokemon's nature *)
 
+val valid_natures : string list
+(** all the acceptable natures of a Pokmeon *)
+
+type damage_class
+(** type for a Pokemon's damage class *)
+
+type target
+(** type for the target of a Pokemon's move *)
+
 type move
 (** type for a Pokemon attack (move)*)
 
@@ -14,36 +23,32 @@ type ailment
 (** type for ailment *)
 
 type t
-(** type of a Pokemon*)
+(** type for a Pokemon*)
 
 exception BadPokemon
-(**Raised when a user attempts to create a Pokemon with invalid inputs.*)
+(** Raised when a user attempts to create a Pokemon with invalid inputs. *)
 
 val zero_stats : stats
+(** A collection of stats with every stat initialized to zero. *)
+
+(* val basic_move : move *)
 (**Exposed for testing purposes*)
 
-val basic_move : move
-(**Exposed for testing purposes*)
-
-val basic_tipe : tipe * tipe
+(* val basic_tipe : tipe * tipe *)
 (**Exposed for testing purposes*)
 
 (* val basic_nature : nature *)
 (**Exposed for testing purposes*)
 
-val create : string -> move list -> int -> string -> t
-(** [create species move_list level nature] is a [species] pokemon that is level
-    [level], has moves [move_list], and nature [nature]*)
-
 val species : t -> string
-(** [species p] is the species of pokemon [p]*)
+(** [species p] is the species of pokemon [p] *)
 
 val base_stats : t -> stats
 (** [base_stats p] is the base stats of pokemon [p] *)
 
 val cur_stats : t -> stats
 (** [cur_stats p] is the current stats of pokemon [p], including any changes
-    from burn, paralysis, etc.*)
+    from burn, paralysis, etc. *)
 
 val base_hp : t -> int
 (** [base_hp p] is the base HP of pokemon [p]. *)
@@ -67,7 +72,7 @@ val hp : t -> int
 (** [hp p] is the current HP of pokemon [p], including changes from damage. *)
 
 val max_hp : t -> int
-(** [max_hp p] is the max HP of pokemon [p]*)
+(** [max_hp p] is the max HP of pokemon [p] *)
 
 val atk : t -> int
 (** [atk p] is the current Attack of pokemon [p], including changes from stat
@@ -93,15 +98,25 @@ val attack : t -> t -> move -> t * t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
-val apply_status_effect : t -> string -> int -> t
-(** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
-    change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
-
 val calc_current_stats : stats -> string -> int -> ailment -> stats -> stats
 (** [calc_current_stats base_stats nature level stat_stages] returns the current
     stats of a pokemon with base stats [base_stats], nature [nature], level
     [level], with stat stages [stat_stages] Should be called when initializing a
-    pokemon, healing, or leveling up*)
+    pokemon, healing, or leveling up *)
+
+val create : string -> move list -> int -> string -> t
+(** [create species move_list level nature] is a [species] pokemon that is level
+    [level], has moves [move_list], and nature [nature] *)
+
+val attack : t -> t -> move -> t * t
+(** [attack a d move] is a pair of Pokemon. The first element is identical to
+    the attacker [a], but with updated stats after making move [move], and the
+    second element is identical to the the defender [d], but with updated stats
+    after [a] made move [move]. *)
+
+val apply_status_effect : t -> string -> int -> t
+(** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
+    change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
 val add_pokemon_move : t -> move -> t
 (** [add_pokemon_move pokemon new_move] adds [new_move] to [pokemon]'s list of

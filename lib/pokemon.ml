@@ -111,38 +111,27 @@ exception BadPokemon
 let zero_stats =
   { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
 
-let basic_move =
-  {
-    id = 0;
-    name = "";
-    tipe = Water;
-    power = 0;
-    pp = 0;
-    accuracy = 0;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 0;
-    effect_chance = 0;
-  }
+(* let basic_move = { id = 0; name = ""; tipe = Water; power = 0; pp = 0;
+   accuracy = 0; priority = 0; target = Enemy; damage_class = Physical;
+   effect_id = 0; effect_chance = 0; } *)
 
-let basic_tipe = (Grass, Poison)
+(* let basic_tipe = (Grass, Poison) *)
 let species p = p.species
 let base_stats p = p.base_stats
 let cur_stats p = p.cur_stats (* Modify with ailment and stat stages *)
-let base_hp p = (base_stats p).hp
-let base_atk p = (base_stats p).atk
-let base_spatk p = (base_stats p).spatk
-let base_def p = (base_stats p).def
-let base_spdef p = (base_stats p).spdef
-let base_spd p = (base_stats p).spd
-let hp p = (cur_stats p).hp
+let base_hp p = p.base_stats.hp
+let base_atk p = p.base_stats.atk
+let base_spatk p = p.base_stats.spatk
+let base_def p = p.base_stats.def
+let base_spdef p = p.base_stats.spdef
+let base_spd p = p.base_stats.spd
+let hp p = p.cur_stats.hp
 let max_hp p = 0 (* TODO*)
-let atk p = (cur_stats p).atk
-let spatk p = (cur_stats p).spatk
-let def p = (cur_stats p).def
-let spdef p = (cur_stats p).spdef
-let spd p = (cur_stats p).spd
+let atk p = p.cur_stats.atk
+let spatk p = p.cur_stats.spatk
+let def p = p.cur_stats.def
+let spdef p = p.cur_stats.spdef
+let spd p = p.cur_stats.spd
 
 let get_multipliers_by_nature n =
   match n with
@@ -246,13 +235,6 @@ let calc_current_stats base_stats nature level ailment stat_stages =
       eva = 100;
     }
     [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
-
-type p_info = {
-  tipe : tipe * tipe;
-  stats : stats;
-  moves : move list;
-  possible_abilities : string list;
-}
 
 let swords_dance =
   {
@@ -479,6 +461,13 @@ let ice_beam =
     effect_chance = 10;
   }
 
+type p_info = {
+  tipe : tipe * tipe;
+  stats : stats;
+  moves : move list;
+  possible_abilities : string list;
+}
+
 let get_info_from_species species =
   match species with
   | "bulbasaur" ->
@@ -660,6 +649,9 @@ let get_info_from_species species =
       }
   | _ -> raise BadPokemon
 
+let get_moves str = (get_info_from_species str).moves
+(* Necessary? *)
+
 let create name mvlst lvl nat =
   let info = get_info_from_species name in
   (*Raises BadPokemon if not a valid species*)
@@ -676,6 +668,7 @@ let create name mvlst lvl nat =
     {
       species = name;
       is_dual_type = false;
+      (*change*)
       tipe = info.tipe;
       base_stats = info.stats;
       cur_stats = calc_current_stats info.stats nat lvl Healthy zero_stats;
@@ -686,8 +679,6 @@ let create name mvlst lvl nat =
       nature = String.lowercase_ascii nat;
     }
 
-let get_moves str = (get_info_from_species str).moves
-
 let attack a d move =
   let attacker = create a.species a.moves a.level a.nature in
   let defender = create d.species d.moves d.level d.nature in
@@ -695,8 +686,22 @@ let attack a d move =
 (*Change to actually calculate new stats*)
 
 let apply_status_effect p stat_name num_stages =
-  create p.species p.moves p.level p.nature
-(*Change to actually apply status effect*)
+  let new_stats =
+    match stat_name with
+    (*change these to actually calculate new stats*)
+    | "hp" -> { p.cur_stats with hp = 1 }
+    | "atk" -> { p.cur_stats with atk = 1 }
+    | "spatk" -> { p.cur_stats with spatk = 1 }
+    | "def" -> { p.cur_stats with def = 1 }
+    | "spdef" -> { p.cur_stats with spdef = 1 }
+    | "spd" -> { p.cur_stats with spd = 1 }
+    | "acc" -> { p.cur_stats with acc = 1 }
+    | "eva" -> { p.cur_stats with eva = 1 }
+    | _ -> failwith "todo"
+  in
+  { p with cur_stats = new_stats }
+
+(* How do you use num_stages? *)
 
 let add_pokemon_move (pokemon : t) (new_move : move) : t =
   if List.length pokemon.moves >= 4 then
