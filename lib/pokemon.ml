@@ -1,8 +1,8 @@
 type stats = {
   hp : int;
   atk : int;
-  spatk : int;
   def : int;
+  spatk : int;
   spdef : int;
   spd : int;
   acc : int;
@@ -36,6 +36,7 @@ type tipe =
 
 let valid_natures =
   [
+    "hardy";
     "lonely";
     "brave";
     "adamant";
@@ -85,13 +86,10 @@ type move = {
   effect_chance : int;
 }
 
-type ailment =
-  | Burned
-  | Paralyzed
-  | Asleep
-  | Frozen
-  | Confused
-  | Healthy
+(* type ailment = | Burned | Paralyzed | Asleep | Frozen | Confused | Healthy *)
+
+let valid_ailments =
+  [ "burned"; "paralyzed"; "asleep"; "frozen"; "confused"; "healthy" ]
 
 type t = {
   species : string;
@@ -102,20 +100,15 @@ type t = {
   stat_stages : stats;
   moves : move list;
   level : int;
-  ailment : ailment;
+  ailment : string;
   nature : string;
 }
 
 exception BadPokemon
 
 let zero_stats =
-  { hp = 0; atk = 0; spatk = 0; def = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
+  { hp = 0; atk = 0; def = 0; spatk = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
 
-(* let basic_move = { id = 0; name = ""; tipe = Water; power = 0; pp = 0;
-   accuracy = 0; priority = 0; target = Enemy; damage_class = Physical;
-   effect_id = 0; effect_chance = 0; } *)
-
-(* let basic_tipe = (Grass, Poison) *)
 let species p = p.species
 let base_stats p = p.base_stats
 let cur_stats p = p.cur_stats (* Modify with ailment and stat stages *)
@@ -128,10 +121,11 @@ let base_spd p = p.base_stats.spd
 let hp p = p.cur_stats.hp
 let max_hp p = 0 (* TODO*)
 let atk p = p.cur_stats.atk
-let spatk p = p.cur_stats.spatk
 let def p = p.cur_stats.def
+let spatk p = p.cur_stats.spatk
 let spdef p = p.cur_stats.spdef
 let spd p = p.cur_stats.spd
+let moves p = p.moves
 
 let get_multipliers_by_nature n =
   match n with
@@ -163,8 +157,8 @@ let get_multipliers_by_nature n =
   | _ -> failwith "Unknown nature"
 
 let get_multipliers_by_ailment = function
-  | Burned -> (1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | Paralyzed -> (1.0, 1.0, 1.0, 1.0, 1.0, 0.25, 1.0, 1.0)
+  | "burned" -> (1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+  | "paralyzed" -> (1.0, 1.0, 1.0, 1.0, 1.0, 0.25, 1.0, 1.0)
   | _ -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 
 let get_multipliers_by_stat_stages stat_stages =
@@ -208,8 +202,8 @@ let apply_multipliers cur_stats
   {
     hp = apply_multiplier cur_stats.hp hp_mult;
     atk = apply_multiplier cur_stats.atk atk_mult;
-    spatk = apply_multiplier cur_stats.spatk spatk_mult;
     def = apply_multiplier cur_stats.def def_mult;
+    spatk = apply_multiplier cur_stats.spatk spatk_mult;
     spdef = apply_multiplier cur_stats.spdef spdef_mult;
     spd = apply_multiplier cur_stats.spd spd_mult;
     acc = apply_multiplier cur_stats.spd acc_mult;
@@ -226,15 +220,18 @@ let calc_current_stats base_stats nature level ailment stat_stages =
   apply_multipliers_list
     {
       hp = stat_aux base_stats.hp level + level + 10;
-      atk = stat_aux base_stats.hp level + 5;
-      def = stat_aux base_stats.hp level + 5;
-      spatk = stat_aux base_stats.hp level + 5;
-      spdef = stat_aux base_stats.hp level + 5;
-      spd = stat_aux base_stats.hp level + 5;
+      atk = stat_aux base_stats.atk level + 5;
+      def = stat_aux base_stats.def level + 5;
+      spatk = stat_aux base_stats.spatk level + 5;
+      spdef = stat_aux base_stats.spdef level + 5;
+      spd = stat_aux base_stats.spd level + 5;
       acc = 100;
       eva = 100;
     }
     [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
+
+let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
+  [ hp; atk; def; spatk; spdef; spd; acc; eva ]
 
 let swords_dance =
   {
@@ -461,6 +458,34 @@ let ice_beam =
     effect_chance = 10;
   }
 
+let move_identifiers =
+  [
+    (14, swords_dance);
+    (75, razor_leaf);
+    (33, tackle);
+    (22, vine_whip);
+    (77, poison_powder);
+    (79, sleep_powder);
+    (163, slash);
+    (53, flamethrower);
+    (52, ember);
+    (10, scratch);
+    (45, growl);
+    (108, smokescreen);
+    (55, water_gun);
+    (39, tail_whip);
+    (58, ice_beam);
+  ]
+
+let move_ids lst =
+  let rec get_move_ids lst = function
+    | [] -> []
+    | h :: t ->
+        if List.mem (snd h) lst then fst h :: get_move_ids lst t
+        else get_move_ids lst t
+  in
+  get_move_ids lst move_identifiers
+
 type p_info = {
   tipe : tipe * tipe;
   stats : stats;
@@ -649,39 +674,31 @@ let get_info_from_species species =
       }
   | _ -> raise BadPokemon
 
-let get_moves str = (get_info_from_species str).moves
-(* Necessary? *)
+let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
 
-let create name mvlst lvl nat =
-  let info = get_info_from_species name in
+let create name lvl nat =
+  let info = get_info_from_species (String.lowercase_ascii name) in
   (*Raises BadPokemon if not a valid species*)
-  let rec check_mvlst = function
-    | [] -> true
-    | h :: t -> List.mem h info.moves && check_mvlst t
-  in
-  if
-    lvl < 1 || lvl > 100
-    || (not (check_mvlst mvlst))
-    || not (List.mem nat valid_natures)
-  then raise BadPokemon
+  if lvl < 1 || lvl > 100 || not (List.mem nat valid_natures) then
+    raise BadPokemon
   else
     {
-      species = name;
+      species = String.lowercase_ascii name;
       is_dual_type = false;
       (*change*)
       tipe = info.tipe;
       base_stats = info.stats;
-      cur_stats = calc_current_stats info.stats nat lvl Healthy zero_stats;
+      cur_stats = calc_current_stats info.stats nat lvl "healthy" zero_stats;
       stat_stages = zero_stats;
-      moves = mvlst;
+      moves = [];
       level = lvl;
-      ailment = Healthy;
+      ailment = "healthy";
       nature = String.lowercase_ascii nat;
     }
 
 let attack a d move =
-  let attacker = create a.species a.moves a.level a.nature in
-  let defender = create d.species d.moves d.level d.nature in
+  let attacker = create a.species a.level a.nature in
+  let defender = create d.species d.level d.nature in
   (attacker, defender)
 (*Change to actually calculate new stats*)
 
@@ -691,8 +708,8 @@ let apply_status_effect p stat_name num_stages =
     (*change these to actually calculate new stats*)
     | "hp" -> { p.cur_stats with hp = 1 }
     | "atk" -> { p.cur_stats with atk = 1 }
-    | "spatk" -> { p.cur_stats with spatk = 1 }
     | "def" -> { p.cur_stats with def = 1 }
+    | "spatk" -> { p.cur_stats with spatk = 1 }
     | "spdef" -> { p.cur_stats with spdef = 1 }
     | "spd" -> { p.cur_stats with spd = 1 }
     | "acc" -> { p.cur_stats with acc = 1 }
@@ -703,7 +720,16 @@ let apply_status_effect p stat_name num_stages =
 
 (* How do you use num_stages? *)
 
-let add_pokemon_move (pokemon : t) (new_move : move) : t =
+let add_pokemon_move (pokemon : t) (new_move_id : int) : t =
+  let new_move =
+    let rec find_move id = function
+      | [] -> raise (Failure "Unrecognized move id")
+      | h :: t -> if fst h = id then snd h else find_move id t
+    in
+    find_move new_move_id move_identifiers
+  in
   if List.length pokemon.moves >= 4 then
     raise (Failure "A Pokémon can only have up to 4 moves.")
-  else { pokemon with moves = pokemon.moves @ [ new_move ] }
+  else if List.mem new_move (get_info_from_species pokemon.species).moves then
+    { pokemon with moves = pokemon.moves @ [ new_move ] }
+  else raise (Failure "This move is not permitted by this species")

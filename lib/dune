@@ -1,2 +1,4 @@
 (library
- (name pokefun))
+ (name pokefun)
+ (instrumentation
+  (backend bisect_ppx)))

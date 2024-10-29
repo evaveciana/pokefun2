@@ -19,8 +19,11 @@ type target
 type move
 (** type for a Pokemon attack (move)*)
 
-type ailment
+(* type ailment *)
+
 (** type for ailment *)
+val valid_ailments : string list
+(** all the acceptable ailments of a Pokemon *)
 
 type t
 (** type for a Pokemon*)
@@ -94,19 +97,34 @@ val spd : t -> int
 (** [spd p] is the current Speed of pokemon [p], including changes from stat
     stages. *)
 
+val moves : t -> move list
+(** [moves p] is the list of moves currently added to [p]. *)
+
+(*Need acc and eva?*)
+
 val attack : t -> t -> move -> t * t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
-val calc_current_stats : stats -> string -> int -> ailment -> stats -> stats
-(** [calc_current_stats base_stats nature level stat_stages] returns the current
-    stats of a pokemon with base stats [base_stats], nature [nature], level
-    [level], with stat stages [stat_stages] Should be called when initializing a
-    pokemon, healing, or leveling up *)
+val calc_current_stats : stats -> string -> int -> string -> stats -> stats
+(** [calc_current_stats base_stats nature level ailment stat_stages] returns the
+    current stats of a pokemon with base stats [base_stats], nature [nature],
+    level [level], ailment [ailment], and with stat stages [stat_stages] Should
+    be called when initializing a pokemon, healing, or leveling up *)
 
-val create : string -> move list -> int -> string -> t
+val stats_to_list : stats -> int list
+(** [stats_to_list stats] is a list representation of [stats]. *)
+
+val move_ids : move list -> int list
+(** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
+
+val get_moves : string -> move list
+(** [get_moves str] is the list of moves associated with a Pokemon of species
+    [str]. *)
+
+val create : string -> int -> string -> t
 (** [create species move_list level nature] is a [species] pokemon that is level
-    [level], has moves [move_list], and nature [nature] *)
+    [level], and has nature [nature] *)
 
 val attack : t -> t -> move -> t * t
 (** [attack a d move] is a pair of Pokemon. The first element is identical to
@@ -118,7 +136,7 @@ val apply_status_effect : t -> string -> int -> t
 (** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
     change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
-val add_pokemon_move : t -> move -> t
-(** [add_pokemon_move pokemon new_move] adds [new_move] to [pokemon]'s list of
-    moves and returns an updated Pokémon with the new move. Raises [failure] if
-    the Pokémon already has 4 moves. *)
+val add_pokemon_move : t -> int -> t
+(** [add_pokemon_move pokemon new_move_id] adds the move with id [new_move_id]
+    to [pokemon]'s list of moves and returns an updated Pokémon with the new
+    move. Raises [failure] if the Pokémon already has 4 moves. *)
