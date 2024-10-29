@@ -104,6 +104,7 @@ type t = {
   level : int;
   ailment : ailment;
   nature : string;
+  cur_hp : int;
 }
 
 exception BadPokemon
@@ -665,18 +666,24 @@ let create name mvlst lvl nat =
     || not (List.mem nat valid_natures)
   then raise BadPokemon
   else
+    let cur_stats = calc_current_stats info.stats nat lvl Healthy zero_stats in
+    let is_dual_type =
+      match info.tipe with
+      | _, NoneType -> false
+      | _ -> true
+    in
     {
       species = name;
-      is_dual_type = false;
-      (*change*)
+      is_dual_type;
       tipe = info.tipe;
       base_stats = info.stats;
-      cur_stats = calc_current_stats info.stats nat lvl Healthy zero_stats;
+      cur_stats;
       stat_stages = zero_stats;
       moves = mvlst;
       level = lvl;
       ailment = Healthy;
       nature = String.lowercase_ascii nat;
+      cur_hp = cur_stats.hp;
     }
 
 let attack a d move =
@@ -685,23 +692,25 @@ let attack a d move =
   (attacker, defender)
 (*Change to actually calculate new stats*)
 
-let apply_status_effect p stat_name num_stages =
-  let new_stats =
+let apply_stat_change p stat_name num_stages =
+  let new_stages =
     match stat_name with
-    (*change these to actually calculate new stats*)
-    | "hp" -> { p.cur_stats with hp = 1 }
-    | "atk" -> { p.cur_stats with atk = 1 }
-    | "spatk" -> { p.cur_stats with spatk = 1 }
-    | "def" -> { p.cur_stats with def = 1 }
-    | "spdef" -> { p.cur_stats with spdef = 1 }
-    | "spd" -> { p.cur_stats with spd = 1 }
-    | "acc" -> { p.cur_stats with acc = 1 }
-    | "eva" -> { p.cur_stats with eva = 1 }
-    | _ -> failwith "todo"
+    | "hp" -> { p.stat_stages with hp = p.stat_stages.hp + num_stages }
+    | "atk" -> { p.stat_stages with atk = p.stat_stages.atk + num_stages }
+    | "spatk" -> { p.stat_stages with spatk = p.stat_stages.spatk + num_stages }
+    | "def" -> { p.stat_stages with def = p.stat_stages.def + num_stages }
+    | "spdef" -> { p.stat_stages with spdef = p.stat_stages.spdef + num_stages }
+    | "spd" -> { p.stat_stages with spd = p.stat_stages.spd + num_stages }
+    | "acc" -> { p.stat_stages with acc = p.stat_stages.acc + num_stages }
+    | "eva" -> { p.stat_stages with eva = p.stat_stages.eva + num_stages }
+    | _ -> failwith "Unknown Stat Name"
   in
-  { p with cur_stats = new_stats }
-
-(* How do you use num_stages? *)
+  {
+    p with
+    stat_stages = new_stages;
+    cur_stats =
+      calc_current_stats p.base_stats p.nature p.level p.ailment new_stages;
+  }
 
 let add_pokemon_move (pokemon : t) (new_move : move) : t =
   if List.length pokemon.moves >= 4 then

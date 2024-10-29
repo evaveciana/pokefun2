@@ -99,10 +99,10 @@ val attack : t -> t -> move -> t * t
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
 val calc_current_stats : stats -> string -> int -> ailment -> stats -> stats
-(** [calc_current_stats base_stats nature level stat_stages] returns the current
-    stats of a pokemon with base stats [base_stats], nature [nature], level
-    [level], with stat stages [stat_stages] Should be called when initializing a
-    pokemon, healing, or leveling up *)
+(** [calc_current_stats base_stats nature level ailment stat_stages] returns the
+    current stats of a pokemon with base stats [base_stats], nature [nature],
+    level [level], ailment [ailment], with stat stages [stat_stages] Should be
+    called when initializing a pokemon, healing, or leveling up *)
 
 val create : string -> move list -> int -> string -> t
 (** [create species move_list level nature] is a [species] pokemon that is level
@@ -114,9 +114,9 @@ val attack : t -> t -> move -> t * t
     second element is identical to the the defender [d], but with updated stats
     after [a] made move [move]. *)
 
-val apply_status_effect : t -> string -> int -> t
-(** [apply_status_effect p stat_name num_stages] applies [num_stages] stat
-    change to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
+val apply_stat_change : t -> string -> int -> t
+(** [apply_stat_change p stat_name num_stages] applies [num_stages] stat change
+    to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
 
 val add_pokemon_move : t -> move -> t
 (** [add_pokemon_move pokemon new_move] adds [new_move] to [pokemon]'s list of
