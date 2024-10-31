@@ -123,8 +123,8 @@ val get_moves : string -> move list
     [str]. *)
 
 val create : string -> int -> string -> t
-(** [create species move_list level nature] is a [species] pokemon that is level
-    [level], and has nature [nature] *)
+(** [create species level nature] is a [species] pokemon that is level [level],
+    and has nature [nature] *)
 
 val attack : t -> t -> move -> t * t
 (** [attack a d move] is a pair of Pokemon. The first element is identical to
