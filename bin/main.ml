@@ -1,5 +1,11 @@
 open Pokefun.Pokemon
 
+(** Game loop for a single player*)
+let () = Random.self_init ()
+(* let create_AI_team lvl = let team = *)
+
+(* let rec game_loop team1 team2 decision = match decision with *)
+
 (*Basic driver program*)
 let play () = print_endline "Start playing"
 
