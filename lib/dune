@@ -1,4 +1,4 @@
 (library
- (name pokefun)
+ (name pokefun) (libraries csv)
  (instrumentation
   (backend bisect_ppx)))

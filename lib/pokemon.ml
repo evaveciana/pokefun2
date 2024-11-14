@@ -234,6 +234,76 @@ let calc_current_stats base_stats nature level ailment stat_stages =
 let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
   [ hp; atk; def; spatk; spdef; spd; acc; eva ]
 
+(*returns list of move ids*)
+let get_pokemon_id poke_name =
+  let pokemon = Csv.load "python/data/pokemon.csv" in
+
+  (* Find the Pokémon ID based on the given name *)
+  match List.find_opt (fun row -> List.nth row 1 = poke_name) pokemon with
+  | Some row ->
+      int_of_string (List.hd row) (* Assuming the ID is in the first column *)
+  | None -> failwith "Not valid pokemon"
+
+let get_move_ids pokemon_id =
+  let (pokemon_moves : string list list) =
+    Csv.load "python/data/pokemon_moves.csv"
+  in
+
+  List.fold_left
+    (fun acc elt ->
+      if List.hd elt = string_of_int pokemon_id then
+        int_of_string (List.nth elt 2) :: acc
+      else acc)
+    [] pokemon_moves
+
+let create_move_from_id move_id =
+  let moves = Csv.load "python/data/moves.csv" in
+
+  match List.find_opt (fun row -> List.hd row = move_id) moves with
+  | Some
+      [
+        id;
+        identifier;
+        _;
+        type_id;
+        power;
+        pp;
+        accuracy;
+        priority;
+        target_id;
+        damage_class_id;
+        effect_id;
+        effect_chance;
+        _;
+        _;
+        _;
+      ] ->
+      {
+        id = int_of_string id;
+        name = identifier;
+        tipe = Normal (*type_id*);
+        (* 1-> Normal 4-> Poison 12-> Grass 10 -> Fire 15 -> Ice *)
+        (*will pls figure this out T-T *)
+        (*pattern match again*)
+        power = int_of_string power;
+        pp = int_of_string pp;
+        accuracy = int_of_string accuracy;
+        priority = int_of_string priority;
+        target =
+          (if int_of_string target_id = 10 then Enemy
+           else if int_of_string target_id = 11 then Self
+           else failwith "Not 10 or 11");
+        damage_class =
+          (if int_of_string damage_class_id = 1 then Status
+           else if int_of_string damage_class_id = 2 then Physical
+           else if int_of_string damage_class_id = 3 then Special
+           else failwith "Not 1, 2, or 3");
+        effect_id = int_of_string effect_id;
+        effect_chance = int_of_string effect_chance;
+      }
+  | Some _ -> failwith "TDO"
+  | None -> failwith "Not valid move_id"
+
 let swords_dance =
   {
     id = 14;
