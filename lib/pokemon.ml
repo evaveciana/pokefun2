@@ -1,3 +1,5 @@
+open Random
+
 type stats = {
   hp : int;
   atk : int;
@@ -102,7 +104,7 @@ type t = {
   level : int;
   ailment : string;
   nature : string;
-  cur_hp : int;
+  mutable cur_hp : int;
 }
 
 exception BadPokemon
@@ -775,10 +777,170 @@ let create name lvl nat =
       cur_hp = cur_stats.hp;
     }
 
+let calc_effectiveness_mult (move : move) (defender : t) =
+  let multiplier move_type target_type =
+    match (move_type, target_type) with
+    (* Normal *)
+    | Normal, Rock | Normal, Steel -> 0.5
+    | Normal, Ghost -> 0.0
+    | Normal, _ -> 1.0
+    (* Fire *)
+    | Fire, Fire | Fire, Water | Fire, Rock | Fire, Dragon -> 0.5
+    | Fire, Grass | Fire, Bug | Fire, Ice | Fire, Steel -> 2.0
+    | Fire, _ -> 1.0
+    (* Water *)
+    | Water, Water | Water, Grass | Water, Dragon -> 0.5
+    | Water, Fire | Water, Ground | Water, Rock -> 2.0
+    | Water, _ -> 1.0
+    (* Electric *)
+    | Electric, Electric | Electric, Grass | Electric, Dragon -> 0.5
+    | Electric, Water | Electric, Flying -> 2.0
+    | Electric, Ground -> 0.0
+    | Electric, _ -> 1.0
+    (* Grass *)
+    | Grass, Fire
+    | Grass, Grass
+    | Grass, Poison
+    | Grass, Flying
+    | Grass, Bug
+    | Grass, Dragon
+    | Grass, Steel -> 0.5
+    | Grass, Water | Grass, Ground | Grass, Rock -> 2.0
+    | Grass, _ -> 1.0
+    (* Ice *)
+    | Ice, Fire | Ice, Water | Ice, Ice | Ice, Steel -> 0.5
+    | Ice, Grass | Ice, Ground | Ice, Flying | Ice, Dragon -> 2.0
+    | Ice, _ -> 1.0
+    (* Fighting *)
+    | Fighting, Poison
+    | Fighting, Flying
+    | Fighting, Psychic
+    | Fighting, Bug
+    | Fighting, Fairy -> 0.5
+    | Fighting, Normal
+    | Fighting, Rock
+    | Fighting, Steel
+    | Fighting, Ice
+    | Fighting, Dark -> 2.0
+    | Fighting, Ghost -> 0.0
+    | Fighting, _ -> 1.0
+    (* Poison *)
+    | Poison, Poison | Poison, Ground | Poison, Rock | Poison, Ghost -> 0.5
+    | Poison, Grass | Poison, Fairy -> 2.0
+    | Poison, Steel -> 0.0
+    | Poison, _ -> 1.0
+    (* Ground *)
+    | Ground, Grass | Ground, Bug -> 0.5
+    | Ground, Fire
+    | Ground, Electric
+    | Ground, Poison
+    | Ground, Rock
+    | Ground, Steel -> 2.0
+    | Ground, Flying -> 0.0
+    | Ground, _ -> 1.0
+    (* Flying *)
+    | Flying, Electric | Flying, Rock | Flying, Steel -> 0.5
+    | Flying, Grass | Flying, Fighting | Flying, Bug -> 2.0
+    | Flying, _ -> 1.0
+    (* Psychic *)
+    | Psychic, Psychic | Psychic, Steel -> 0.5
+    | Psychic, Fighting | Psychic, Poison -> 2.0
+    | Psychic, Dark -> 0.0
+    | Psychic, _ -> 1.0
+    (* Bug *)
+    | Bug, Fire
+    | Bug, Fighting
+    | Bug, Poison
+    | Bug, Flying
+    | Bug, Ghost
+    | Bug, Steel
+    | Bug, Fairy -> 0.5
+    | Bug, Grass | Bug, Psychic | Bug, Dark -> 2.0
+    | Bug, _ -> 1.0
+    (* Rock *)
+    | Rock, Fighting | Rock, Ground | Rock, Steel -> 0.5
+    | Rock, Fire | Rock, Ice | Rock, Flying | Rock, Bug -> 2.0
+    | Rock, _ -> 1.0
+    (* Ghost *)
+    | Ghost, Dark -> 0.5
+    | Ghost, Ghost | Ghost, Psychic -> 2.0
+    | Ghost, Normal -> 0.0
+    | Ghost, _ -> 1.0
+    (* Dragon *)
+    | Dragon, Steel -> 0.5
+    | Dragon, Dragon -> 2.0
+    | Dragon, Fairy -> 0.0
+    | Dragon, _ -> 1.0
+    (* Dark *)
+    | Dark, Fighting | Dark, Dark | Dark, Fairy -> 0.5
+    | Dark, Psychic | Dark, Ghost -> 2.0
+    | Dark, _ -> 1.0
+    (* Steel *)
+    | Steel, Fire | Steel, Water | Steel, Electric | Steel, Steel -> 0.5
+    | Steel, Ice | Steel, Rock | Steel, Fairy -> 2.0
+    | Steel, _ -> 1.0
+    (* Fairy *)
+    | Fairy, Fire | Fairy, Poison | Fairy, Steel -> 0.5
+    | Fairy, Fighting | Fairy, Dragon | Fairy, Dark -> 2.0
+    | Fairy, _ -> 1.0
+    | _, _ -> failwith "This should not happen. just for exhaustiveness"
+  in
+
+  let move_type = move.tipe in
+  let type1, type2 = defender.tipe in
+
+  let eff1 = multiplier move_type type1 in
+  let eff2 =
+    match type2 with
+    | NoneType -> 1.0
+    | _ -> multiplier move_type type2
+  in
+
+  eff1 *. eff2
+
 let attack a d move =
   let attacker = create a.species a.level a.nature in
   let defender = create d.species d.level d.nature in
+  let move_damage_class = move.damage_class in
+  let match_dmg move_damage_class =
+    match move_damage_class with
+    | Physical ->
+        let attack_stat = attacker.cur_stats.atk in
+        let defense_stat = defender.cur_stats.def in
+        (attack_stat, defense_stat)
+    | Special ->
+        let attack_stat = attacker.cur_stats.spatk in
+        let defense_stat = defender.cur_stats.spdef in
+        (attack_stat, defense_stat)
+    | Status -> failwith "TODO"
+  in
+  let a_stat =
+    match match_dmg move_damage_class with
+    | attack, _ -> float_of_int attack
+  in
+  let d_stat =
+    match match_dmg move_damage_class with
+    | _, defense -> float_of_int defense
+  in
+  (*for now just use stage 1*)
+  let calculate_crit = Random.int 16 in
+  let crit = if calculate_crit = 0 then 1.5 else 1. in
+  let rand = float_of_int (85 + Random.int (100 - 85 + 1)) /. 100.0 in
+  (*"same type attack bonus" or STAB*)
+  let stab =
+    match attacker.tipe with
+    | t1, t2 -> if t1 = move.tipe || t2 = move.tipe then 1.5 else 1.
+  in
+  let eff_mult = calc_effectiveness_mult move d in
+  let dmg =
+    (((2.0 *. float_of_int attacker.level /. 5.0) +. 2.0)
+     *. float_of_int move.power *. (a_stat /. d_stat) /. 50.0
+    +. 2.0)
+    *. crit *. rand *. stab *. eff_mult
+  in
+  defender.cur_hp <- max 0 (int_of_float (float_of_int defender.cur_hp -. dmg));
   (attacker, defender)
+
 (*Change to actually calculate new stats*)
 
 let apply_stat_change p stat_name num_stages =

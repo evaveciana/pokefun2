@@ -126,6 +126,10 @@ val create : string -> int -> string -> t
 (** [create species level nature] is a [species] pokemon that is level [level],
     and has nature [nature] *)
 
+val calc_effectiveness_mult : move -> t -> float
+(** [calc_effectiveness_mult move t] is the float multiplier that is used to
+    calculate total damage done from a move*)
+
 val attack : t -> t -> move -> t * t
 (** [attack a d move] is a pair of Pokemon. The first element is identical to
     the attacker [a], but with updated stats after making move [move], and the
