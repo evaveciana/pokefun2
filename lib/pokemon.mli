@@ -16,7 +16,19 @@ type damage_class
 type target
 (** type for the target of a Pokemon's move *)
 
-type move
+type move = {
+  id : int;
+  name : string;
+  tipe : tipe;
+  power : int;
+  pp : int;
+  accuracy : int;
+  priority : int;
+  target : target;
+  damage_class : damage_class;
+  effect_id : int;
+  effect_chance : int;
+}
 (** type for a Pokemon attack (move)*)
 
 (* type ailment *)
@@ -25,7 +37,19 @@ type move
 val valid_ailments : string list
 (** all the acceptable ailments of a Pokemon *)
 
-type t
+type t = {
+  species : string;
+  is_dual_type : bool;
+  tipe : tipe * tipe;
+  base_stats : stats;
+  cur_stats : stats;
+  stat_stages : stats;
+  moves : move list;
+  level : int;
+  ailment : string;
+  nature : string;
+  mutable cur_hp : int;
+}
 (** type for a Pokemon*)
 
 exception BadPokemon
