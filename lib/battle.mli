@@ -15,6 +15,8 @@ val create_ai_team : unit -> team
 (** creates reasonably balanced team of 6 pokemon, 4 moves each, random natures*)
 val get_player_action : unit -> decision
 (** waits for the player action to input something in the terminal (currently no gui yet)*)
+val pick_team : unit -> team
+(** waits for player input to pick a team*)
 val make_ai_action : battle_state -> decision
 (** take the current state and make a new*)
 val handle_player_decision : decision -> battle_state -> battle_state

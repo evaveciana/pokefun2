@@ -32,6 +32,7 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
 let create_random_team () : team = failwith "TODO"
 let create_ai_team () : team = failwith "TODO"
 let get_player_action () : decision = Run (* Placeholder implementation *)
+let pick_team () : team = failwith "TODO"
 
 let make_ai_action (battle : battle_state) : decision =
   Run (* Placeholder implementation *)
