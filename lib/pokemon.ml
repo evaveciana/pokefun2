@@ -238,7 +238,7 @@ let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
 
 (*returns list of move ids*)
 let get_pokemon_id poke_name =
-  let pokemon = Csv.load "python/data/pokemon.csv" in
+  let pokemon = Csv.load "lib/python/data/pokemon.csv" in
 
   (* Find the Pokémon ID based on the given name *)
   match List.find_opt (fun row -> List.nth row 1 = poke_name) pokemon with
@@ -248,7 +248,7 @@ let get_pokemon_id poke_name =
 
 let get_move_ids pokemon_id =
   let (pokemon_moves : string list list) =
-    Csv.load "python/data/pokemon_moves.csv"
+    Csv.load "lib/python/data/pokemon_moves.csv"
   in
 
   List.fold_left
@@ -258,8 +258,133 @@ let get_move_ids pokemon_id =
       else acc)
     [] pokemon_moves
 
+let get_type_name type_id =
+  let types = Csv.load "lib/python/data/types.csv" in
+
+  match
+    List.find_opt (fun row -> List.hd row = string_of_int type_id) types
+  with
+  | Some [ _; name; _; _ ] -> name
+  | _ -> "Unknown"
+
+let get_move_id_from_name (move_name : string) : int =
+  let moves = Csv.load "lib/python/data/moves.csv" in
+
+  match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
+  | Some [ id; _; _; _; _; _; _; _; _; _; _; _; _; _; _ ] -> int_of_string id
+  | _ -> failwith "Invalid move"
+
+let tipe_to_string (tipe : tipe) : string =
+  match tipe with
+  | Normal -> "Normal"
+  | Fighting -> "Fighting"
+  | Flying -> "Flying"
+  | Poison -> "Poison"
+  | Ground -> "Ground"
+  | Rock -> "Rock"
+  | Bug -> "Bug"
+  | Ghost -> "Ghost"
+  | Steel -> "Steel"
+  | Fire -> "Fire"
+  | Water -> "Water"
+  | Grass -> "Grass"
+  | Electric -> "Electric"
+  | Psychic -> "Psychic"
+  | Ice -> "Ice"
+  | Dragon -> "Dragon"
+  | Dark -> "Dark"
+  | Fairy -> "Fairy"
+  | NoneType -> "NoneType"
+
+let damage_class_to_string (damage_class : damage_class) : string =
+  match damage_class with
+  | Physical -> "Physical"
+  | Special -> "Special"
+  | Status -> "Status"
+
+let move_to_string (move : move) : string =
+  move.name ^ " (Type: " ^ tipe_to_string move.tipe ^ ", Power: "
+  ^ string_of_int move.power ^ ", PP: " ^ string_of_int move.pp ^ ", Accuracy: "
+  ^ string_of_int move.accuracy
+  ^ ", Damage Class: "
+  ^ damage_class_to_string move.damage_class
+  ^ ")"
+
+(*TODO FULLY IMPLEMENT LATER !!! just minimal for now*)
+let pokemon_to_string (pokemon : t) : string =
+  let moves =
+    if List.length pokemon.moves = 0 then "No moves available."
+    else pokemon.moves |> List.map move_to_string |> String.concat "\n"
+  in
+  pokemon.species ^ ": " ^ moves
+
+let create_move_from_name move_name =
+  let moves = Csv.load "lib/python/data/moves.csv" in
+
+  match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
+  | Some
+      [
+        id;
+        identifier;
+        _;
+        type_id;
+        power;
+        pp;
+        accuracy;
+        priority;
+        target_id;
+        damage_class_id;
+        effect_id;
+        effect_chance;
+        _;
+        _;
+        _;
+      ] ->
+      {
+        id = int_of_string id;
+        name = identifier;
+        tipe =
+          (match int_of_string type_id with
+          | 1 -> Normal
+          | 2 -> Fighting
+          | 3 -> Flying
+          | 4 -> Poison
+          | 5 -> Ground
+          | 6 -> Rock
+          | 7 -> Bug
+          | 8 -> Ghost
+          | 9 -> Steel
+          | 10 -> Fire
+          | 11 -> Water
+          | 12 -> Grass
+          | 13 -> Electric
+          | 14 -> Psychic
+          | 15 -> Ice
+          | 16 -> Dragon
+          | 17 -> Dark
+          | 18 -> Fairy
+          | _ -> failwith "Unknown type");
+        power = int_of_string power;
+        pp = int_of_string pp;
+        accuracy = int_of_string accuracy;
+        priority = int_of_string priority;
+        target =
+          (if int_of_string target_id = 10 then Enemy
+           else if int_of_string target_id = 11 then Self
+           else failwith "Not 10 or 11");
+        damage_class =
+          (if int_of_string damage_class_id = 1 then Status
+           else if int_of_string damage_class_id = 2 then Physical
+           else if int_of_string damage_class_id = 3 then Special
+           else failwith "Not 1, 2, or 3");
+        effect_id = int_of_string effect_id;
+        effect_chance = int_of_string effect_chance;
+      }
+  | Some _ -> failwith "TODO"
+  | None -> failwith "Not valid move_id"
+
 let create_move_from_id move_id =
-  let moves = Csv.load "python/data/moves.csv" in
+  let moves = Csv.load "lib/python/data/moves.csv" in
 
   match List.find_opt (fun row -> List.hd row = move_id) moves with
   | Some
@@ -283,10 +408,27 @@ let create_move_from_id move_id =
       {
         id = int_of_string id;
         name = identifier;
-        tipe = Normal (*type_id*);
-        (* 1-> Normal 4-> Poison 12-> Grass 10 -> Fire 15 -> Ice *)
-        (*will pls figure this out T-T *)
-        (*pattern match again*)
+        tipe =
+          (match int_of_string type_id with
+          | 1 -> Normal
+          | 2 -> Fighting
+          | 3 -> Flying
+          | 4 -> Poison
+          | 5 -> Ground
+          | 6 -> Rock
+          | 7 -> Bug
+          | 8 -> Ghost
+          | 9 -> Steel
+          | 10 -> Fire
+          | 11 -> Water
+          | 12 -> Grass
+          | 13 -> Electric
+          | 14 -> Psychic
+          | 15 -> Ice
+          | 16 -> Dragon
+          | 17 -> Dark
+          | 18 -> Fairy
+          | _ -> failwith "Unknown type");
         power = int_of_string power;
         pp = int_of_string pp;
         accuracy = int_of_string accuracy;
@@ -303,8 +445,55 @@ let create_move_from_id move_id =
         effect_id = int_of_string effect_id;
         effect_chance = int_of_string effect_chance;
       }
-  | Some _ -> failwith "TDO"
+  | Some _ -> failwith "TODO"
   | None -> failwith "Not valid move_id"
+
+let display_learnable_moves (pokemon_species : string) : unit =
+  let poke_id = get_pokemon_id pokemon_species in
+  let move_ids = get_move_ids poke_id in
+  let moves = Csv.load "lib/python/data/moves.csv" in
+
+  let rec find_details move_id =
+    match
+      List.find_opt (fun row -> List.hd row = string_of_int move_id) moves
+    with
+    | Some
+        [
+          id;
+          identifier;
+          _;
+          type_id;
+          power;
+          pp;
+          accuracy;
+          priority;
+          target_id;
+          damage_class_id;
+          effect_id;
+          effect_chance;
+          _;
+          _;
+          _;
+        ] ->
+        let move_type = get_type_name (int_of_string type_id) in
+        let damage_class =
+          match int_of_string damage_class_id with
+          | 1 -> "Status"
+          | 2 -> "Physical"
+          | 3 -> "Special"
+          | _ -> "Unknown"
+        in
+        Printf.sprintf
+          "%s (Type: %s, Power: %s, PP: %s, Accuracy: %s, Damage Class: %s)"
+          identifier move_type power pp accuracy damage_class
+    | _ -> "Unknown move"
+  in
+  print_endline ("Learnable moves for " ^ pokemon_species ^ ":");
+  List.iter
+    (fun move_id ->
+      let move_details = find_details move_id in
+      print_endline ("- " ^ move_details))
+    move_ids
 
 let swords_dance =
   {
@@ -566,187 +755,7 @@ type p_info = {
   possible_abilities : string list;
 }
 
-let get_info_from_species species =
-  match species with
-  | "bulbasaur" ->
-      {
-        tipe = (Grass, Poison);
-        stats =
-          {
-            hp = 45;
-            atk = 49;
-            def = 49;
-            spatk = 65;
-            spdef = 65;
-            spd = 45;
-            acc = 0;
-            eva = 0;
-          };
-        moves =
-          [
-            swords_dance;
-            razor_leaf;
-            tackle;
-            vine_whip;
-            poison_powder;
-            sleep_powder;
-          ];
-        possible_abilities = [ "overgrow"; "chlorophyll" ];
-      }
-  | "ivysaur" ->
-      {
-        tipe = (Grass, Poison);
-        stats =
-          {
-            hp = 60;
-            atk = 62;
-            def = 63;
-            spatk = 80;
-            spdef = 80;
-            spd = 60;
-            acc = 0;
-            eva = 0;
-          };
-        moves =
-          [
-            swords_dance;
-            razor_leaf;
-            tackle;
-            vine_whip;
-            poison_powder;
-            sleep_powder;
-          ];
-        possible_abilities = [ "overgrow"; "chlorophyll" ];
-      }
-  | "venusaur" ->
-      {
-        tipe = (Grass, Poison);
-        stats =
-          {
-            hp = 80;
-            atk = 82;
-            def = 83;
-            spatk = 100;
-            spdef = 100;
-            spd = 80;
-            acc = 0;
-            eva = 0;
-          };
-        moves =
-          [
-            swords_dance;
-            razor_leaf;
-            tackle;
-            vine_whip;
-            poison_powder;
-            sleep_powder;
-          ];
-        possible_abilities = [ "overgrow"; "chlorophyll" ];
-      }
-  | "charmander" ->
-      {
-        tipe = (Fire, NoneType);
-        stats =
-          {
-            hp = 39;
-            atk = 52;
-            def = 43;
-            spatk = 60;
-            spdef = 50;
-            spd = 65;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
-        possible_abilities = [ "blaze"; "solar-power" ];
-      }
-  | "charmeleon" ->
-      {
-        tipe = (Fire, NoneType);
-        stats =
-          {
-            hp = 58;
-            atk = 64;
-            def = 58;
-            spatk = 80;
-            spdef = 65;
-            spd = 80;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
-        possible_abilities = [ "blaze"; "solar-power" ];
-      }
-  | "charizard" ->
-      {
-        tipe = (Fire, Flying);
-        stats =
-          {
-            hp = 78;
-            atk = 84;
-            def = 78;
-            spatk = 109;
-            spdef = 85;
-            spd = 100;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ slash; flamethrower; ember; scratch; growl; smokescreen ];
-        possible_abilities = [ "blaze"; "solar-power" ];
-      }
-  | "squirtle" ->
-      {
-        tipe = (Water, NoneType);
-        stats =
-          {
-            hp = 44;
-            atk = 48;
-            def = 65;
-            spatk = 50;
-            spdef = 64;
-            spd = 43;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ water_gun; tackle; tail_whip; ice_beam ];
-        possible_abilities = [ "torrent"; "rain-dish" ];
-      }
-  | "wartortle" ->
-      {
-        tipe = (Water, NoneType);
-        stats =
-          {
-            hp = 59;
-            atk = 63;
-            def = 80;
-            spatk = 65;
-            spdef = 80;
-            spd = 58;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ water_gun; tackle; tail_whip; ice_beam ];
-        possible_abilities = [ "torrent"; "rain-dish" ];
-      }
-  | "blastoise" ->
-      {
-        tipe = (Water, NoneType);
-        stats =
-          {
-            hp = 79;
-            atk = 83;
-            def = 100;
-            spatk = 85;
-            spdef = 105;
-            spd = 78;
-            acc = 0;
-            eva = 0;
-          };
-        moves = [ water_gun; tackle; tail_whip; ice_beam ];
-        possible_abilities = [ "torrent"; "rain-dish" ];
-      }
-  | _ -> raise BadPokemon
-
+let get_info_from_species (species : string) : p_info = failwith "TODO"
 let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
 
 let create name lvl nat =

@@ -139,6 +139,24 @@ val calc_current_stats : stats -> string -> int -> string -> stats -> stats
 val stats_to_list : stats -> int list
 (** [stats_to_list stats] is a list representation of [stats]. *)
 
+val get_move_id_from_name : string -> int
+(** [get_move_id_from_name str] is the csv move id of the move of name
+    'str'*)
+
+val move_to_string : move -> string
+(** [move_to_string move] is the necessary information in string form of
+    move*)
+val pokemon_to_string : t -> string
+(** [pokemon_to_string t] is the name and learned moves of a pokemon*)
+
+val create_move_from_name : string -> move
+(** [create_move_from_name str] from the csv, initializes a move record with
+    name 'str'*)
+
+val display_learnable_moves : string -> unit
+(** [display_learnable_moves str] prints out each move that the pokemon of
+    species str can learn, with some basic info about the move*)
+
 val move_ids : move list -> int list
 (** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
 

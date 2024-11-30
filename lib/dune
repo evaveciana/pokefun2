@@ -1,5 +1,5 @@
 (library
  (name pokefun)
- (libraries csv)
+ (libraries ANSITerminal csv)
  (instrumentation
   (backend bisect_ppx)))

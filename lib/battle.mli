@@ -7,8 +7,7 @@ type battle_state
 and battle_status
 (** type for the current state of the battle *)
 
-val pick_team : unit -> team
-(** waits for player input to pick a team*)
+
 
 
 val init_battle : team -> team -> battle_state
@@ -26,7 +25,10 @@ val handle_player_decision : decision -> battle_state -> battle_state
 (** takes decision and advances the current battle_state further to progress the game*)
 (* val ai_action : battle_state -> battle_state *)
 
-val battle_loop : battle_state -> battle_state 
+val battle_loop : battle_state -> unit 
 (** loops through the battle until the state reaches ended *)
-val main_menu : unit -> 'a
+
+val pick_team : string list -> team
+(** waits for player input to pick a team*)
+val main_menu : unit -> unit
 (** begins the game by allowing players to select which pokemon they want *)
