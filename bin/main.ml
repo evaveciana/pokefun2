@@ -2,7 +2,7 @@ open Pokefun.Pokemon
 open Pokefun.Battle
 
 (** Game loop for a single player*)
-let play = main_menu ()
+let play = test_display ()
 (* let () = Random.self_init () (* let create_AI_team lvl = let team = *)
 
    (* let rec game_loop team1 team2 decision = match decision with *)

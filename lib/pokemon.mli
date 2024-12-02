@@ -1,7 +1,26 @@
 type stats
 (** type for the stats of a Pokemon *)
 
-type tipe
+type tipe =
+  | Normal
+  | Fire
+  | Water
+  | Grass
+  | Electric
+  | Ice
+  | Fighting
+  | Poison
+  | Ground
+  | Flying
+  | Psychic
+  | Bug
+  | Rock
+  | Ghost
+  | Dark
+  | Dragon
+  | Steel
+  | Fairy
+  | NoneType
 (** type for a Pokemon type *)
 
 (* type nature *)
@@ -156,7 +175,8 @@ val create_move_from_name : string -> move
 val display_learnable_moves : string -> unit
 (** [display_learnable_moves str] prints out each move that the pokemon of
     species str can learn, with some basic info about the move*)
-
+val example_move : unit -> move
+(** purely for testing, just returns a premade move*)
 val move_ids : move list -> int list
 (** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
 

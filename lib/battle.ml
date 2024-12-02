@@ -1,5 +1,32 @@
 open Pokemon
 open ANSITerminal
+open Tsdl
+open Tsdl_image
+
+let load_texture renderer path =
+  let full_path = Filename.concat "assets" path in
+  print_endline ("Loading asset: " ^ full_path);
+
+  match Image.load_texture renderer full_path with
+  | Ok texture -> texture
+  | Error (`Msg e) -> failwith ("Failed to load texture: " ^ e)
+
+let load_battle_assets renderer =
+  let battle_ui = load_texture renderer "battleUI.png" in
+  let fronts = load_texture renderer "fronts.png" in
+  let backs = load_texture renderer "backs.png" in
+  let fonts = load_texture renderer "fonts.png" in
+  (battle_ui, fronts, backs, fonts)
+
+let initialize_gui () =
+  match Sdl.init Sdl.Init.video with
+  | Error (`Msg e) -> failwith ("SDL init error: " ^ e)
+  | Ok () -> (
+      match Sdl.create_window_and_renderer ~w:800 ~h:600 Sdl.Window.shown with
+      | Error (`Msg e) -> failwith ("Window creation error: " ^ e)
+      | Ok (window, renderer) ->
+          print_endline "Window and renderer created successfully.";
+          (window, renderer))
 
 let every_pokemon () =
   let rows = Csv.load "lib/python/data/first_151_pokemon.csv" in
@@ -7,6 +34,23 @@ let every_pokemon () =
 
 (* Type definitions *)
 type team = t list
+
+let test_display () =
+  let window, renderer = initialize_gui () in
+  let battle_ui = load_texture renderer "battleUI.png" in
+
+  (* Render the background *)
+  Sdl.render_clear renderer |> ignore;
+  Sdl.render_copy renderer battle_ui |> ignore;
+  Sdl.render_present renderer;
+
+  (* Keep the window open for 5 seconds *)
+  Sdl.delay 5000l;
+
+  (* Cleanup resources *)
+  Sdl.destroy_renderer renderer;
+  Sdl.destroy_window window;
+  Sdl.quit ()
 
 (* Type for a team of Pokémon *)
 type decision =
@@ -125,11 +169,29 @@ let handle_player_decision (decision : decision) (battle : battle_state) :
     battle_state =
   { battle with current_turn = battle.current_turn + 1 }
 
-let battle_loop (battle : battle_state) =
-  print_endline "Team1: ";
-  let pokemon = List.map pokemon_to_string battle.team1 in
-  let pokemon_string = List.fold_left ( ^ ) "" pokemon in
-  print_endline pokemon_string
+(* JUST FOR implementation! initializes teams for displaying menu *)
+let setup_fake () : battle_state =
+  let p1 =
+    {
+      species = "venusaur";
+      is_dual_type = true;
+      tipe = (Grass, Poison);
+      base_stats = zero_stats;
+      cur_stats = zero_stats;
+      stat_stages = zero_stats;
+      moves = [ example_move () ];
+      level = 50;
+      ailment = "healthy";
+      nature = "hardy";
+      cur_hp = 1;
+    }
+  in
+  let team1 = [ p1 ] in
+  let team2 = [ p1 ] in
+  let battle_state = init_battle team1 team2 in
+  battle_state
+
+let battle_loop (battle : battle_state) = failwith "TODO"
 
 (*HELPER FUNCTIONS FOR THE main_menu and pick_team FUNCTIONS !!! (for terminal
   UI)*)

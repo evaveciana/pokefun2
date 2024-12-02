@@ -1,5 +1,7 @@
+(data_only_dirs assets)
+
 (library
  (name pokefun)
- (libraries ANSITerminal csv)
+ (libraries ANSITerminal tsdl tsdl-image csv)
  (instrumentation
   (backend bisect_ppx)))

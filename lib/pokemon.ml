@@ -739,6 +739,8 @@ let move_identifiers =
     (58, ice_beam);
   ]
 
+let example_move () = vine_whip
+
 let move_ids lst =
   let rec get_move_ids lst = function
     | [] -> []
