@@ -1,32 +1,5 @@
 open Pokemon
 open ANSITerminal
-open Tsdl
-open Tsdl_image
-
-let load_texture renderer path =
-  let full_path = Filename.concat "assets" path in
-  print_endline ("Loading asset: " ^ full_path);
-
-  match Image.load_texture renderer full_path with
-  | Ok texture -> texture
-  | Error (`Msg e) -> failwith ("Failed to load texture: " ^ e)
-
-let load_battle_assets renderer =
-  let battle_ui = load_texture renderer "battleUI.png" in
-  let fronts = load_texture renderer "fronts.png" in
-  let backs = load_texture renderer "backs.png" in
-  let fonts = load_texture renderer "fonts.png" in
-  (battle_ui, fronts, backs, fonts)
-
-let initialize_gui () =
-  match Sdl.init Sdl.Init.video with
-  | Error (`Msg e) -> failwith ("SDL init error: " ^ e)
-  | Ok () -> (
-      match Sdl.create_window_and_renderer ~w:800 ~h:600 Sdl.Window.shown with
-      | Error (`Msg e) -> failwith ("Window creation error: " ^ e)
-      | Ok (window, renderer) ->
-          print_endline "Window and renderer created successfully.";
-          (window, renderer))
 
 let every_pokemon () =
   let rows = Csv.load "lib/python/data/first_151_pokemon.csv" in
@@ -34,23 +7,6 @@ let every_pokemon () =
 
 (* Type definitions *)
 type team = t list
-
-let test_display () =
-  let window, renderer = initialize_gui () in
-  let battle_ui = load_texture renderer "battleUI.png" in
-
-  (* Render the background *)
-  Sdl.render_clear renderer |> ignore;
-  Sdl.render_copy renderer battle_ui |> ignore;
-  Sdl.render_present renderer;
-
-  (* Keep the window open for 5 seconds *)
-  Sdl.delay 5000l;
-
-  (* Cleanup resources *)
-  Sdl.destroy_renderer renderer;
-  Sdl.destroy_window window;
-  Sdl.quit ()
 
 (* Type for a team of Pokémon *)
 type decision =
