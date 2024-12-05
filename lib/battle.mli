@@ -9,7 +9,7 @@ and battle_status
 (** type for the current state of the battle *)
 
 
-val test_display : unit -> unit
+
 
 val init_battle : team -> team -> battle_state
 (** starts the battle by having two teams start the game with populated moves and full health*)

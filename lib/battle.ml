@@ -50,6 +50,8 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
 
 let create_random_team () : team = failwith "TODO"
 let create_ai_team () : team = failwith "TODO"
+
+(*in battle choosing a move*)
 let choose_move () : move = failwith "TODO"
 
 let rec attack_menu battle_state =
@@ -222,6 +224,7 @@ let rec poke_info_screen all_pokemon name : Pokemon.t * bool =
       poke_info_screen all_pokemon pokemon.species
 
 let rec search_for_pokemon (curr_team : team) all_pokemon : team =
+  let all_pokemon = List.tl all_pokemon in
   let rec loop query =
     clear_screen ();
     print_endline "Search for a Pokemon...";

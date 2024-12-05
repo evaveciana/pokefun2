@@ -2,6 +2,6 @@
 
 (library
  (name pokefun)
- (libraries ANSITerminal tsdl tsdl-image csv)
+ (libraries ANSITerminal csv)
  (instrumentation
   (backend bisect_ppx)))

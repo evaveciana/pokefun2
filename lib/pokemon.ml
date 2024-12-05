@@ -495,51 +495,6 @@ let display_learnable_moves (pokemon_species : string) : unit =
       print_endline ("- " ^ move_details))
     move_ids
 
-let swords_dance =
-  {
-    id = 14;
-    name = "Swords Dance";
-    tipe = Normal;
-    power = 0;
-    pp = 20;
-    accuracy = 0;
-    priority = 0;
-    target = Self;
-    damage_class = Status;
-    effect_id = 51;
-    effect_chance = 0;
-  }
-
-let razor_leaf =
-  {
-    id = 75;
-    name = "Razor Leaf";
-    tipe = Grass;
-    power = 55;
-    pp = 25;
-    accuracy = 95;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 44;
-    effect_chance = 0;
-  }
-
-let tackle =
-  {
-    id = 33;
-    name = "Tackle";
-    tipe = Normal;
-    power = 40;
-    pp = 35;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 1;
-    effect_chance = 0;
-  }
-
 let vine_whip =
   {
     id = 22;
@@ -570,175 +525,7 @@ let poison_powder =
     effect_chance = 0;
   }
 
-let sleep_powder =
-  {
-    id = 79;
-    name = "Sleep Powder";
-    tipe = Grass;
-    power = 0;
-    pp = 15;
-    accuracy = 75;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 2;
-    effect_chance = 0;
-  }
-
-let slash =
-  {
-    id = 163;
-    name = "Slash";
-    tipe = Normal;
-    power = 70;
-    pp = 20;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 44;
-    effect_chance = 0;
-  }
-
-let flamethrower =
-  {
-    id = 53;
-    name = "Flamethrower";
-    tipe = Fire;
-    power = 90;
-    pp = 15;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Special;
-    effect_id = 5;
-    effect_chance = 10;
-  }
-
-let ember =
-  {
-    id = 52;
-    name = "Ember";
-    tipe = Fire;
-    power = 40;
-    pp = 25;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Special;
-    effect_id = 5;
-    effect_chance = 10;
-  }
-
-let scratch =
-  {
-    id = 10;
-    name = "Scratch";
-    tipe = Normal;
-    power = 40;
-    pp = 35;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 1;
-    effect_chance = 0;
-  }
-
-let growl =
-  {
-    id = 45;
-    name = "Growl";
-    tipe = Normal;
-    power = 0;
-    pp = 40;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 19;
-    effect_chance = 0;
-  }
-
-let smokescreen =
-  {
-    id = 108;
-    name = "Smokescreen";
-    tipe = Normal;
-    power = 0;
-    pp = 20;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 24;
-    effect_chance = 0;
-  }
-
-let water_gun =
-  {
-    id = 55;
-    name = "Water Gun";
-    tipe = Water;
-    power = 40;
-    pp = 25;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Special;
-    effect_id = 1;
-    effect_chance = 0;
-  }
-
-let tail_whip =
-  {
-    id = 39;
-    name = "Tail Whip";
-    tipe = Normal;
-    power = 0;
-    pp = 30;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 20;
-    effect_chance = 0;
-  }
-
-let ice_beam =
-  {
-    id = 58;
-    name = "Ice Beam";
-    tipe = Ice;
-    power = 90;
-    pp = 10;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Special;
-    effect_id = 6;
-    effect_chance = 10;
-  }
-
-let move_identifiers =
-  [
-    (14, swords_dance);
-    (75, razor_leaf);
-    (33, tackle);
-    (22, vine_whip);
-    (77, poison_powder);
-    (79, sleep_powder);
-    (163, slash);
-    (53, flamethrower);
-    (52, ember);
-    (10, scratch);
-    (45, growl);
-    (108, smokescreen);
-    (55, water_gun);
-    (39, tail_whip);
-    (58, ice_beam);
-  ]
-
+let move_identifiers = [ (22, vine_whip); (77, poison_powder) ]
 let example_move () = vine_whip
 
 let move_ids lst =
@@ -761,24 +548,82 @@ let get_info_from_species (species : string) : p_info = failwith "TODO"
 let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
 
 let create name lvl nat =
-  let info = get_info_from_species (String.lowercase_ascii name) in
+  let pokemon_tipes = Csv.load "lib/python/data/pokemon_types.csv" in
+  let pokemon_id = get_pokemon_id name in
+
+  let filter_by_int data id =
+    List.filter
+      (fun row ->
+        match row with
+        | [] -> false
+        | hd :: _ -> ( try int_of_string hd = id with Failure _ -> false))
+      data
+  in
+
+  let tipe =
+    let tipes = filter_by_int pokemon_tipes pokemon_id in
+    let match_tipe tipe_id =
+      match tipe_id with
+      | 1 -> Normal
+      | 2 -> Fighting
+      | 3 -> Flying
+      | 4 -> Poison
+      | 5 -> Ground
+      | 6 -> Rock
+      | 7 -> Bug
+      | 8 -> Ghost
+      | 9 -> Steel
+      | 10 -> Fire
+      | 11 -> Water
+      | 12 -> Grass
+      | 13 -> Electric
+      | 14 -> Psychic
+      | 15 -> Ice
+      | 16 -> Dragon
+      | 17 -> Dark
+      | 18 -> Fairy
+      | _ -> failwith "Unknown type"
+    in
+
+    let first_tipe = match_tipe (int_of_string (List.nth (List.hd tipes) 1)) in
+    if List.length tipes = 1 then (first_tipe, NoneType)
+    else
+      let second_tipe =
+        match_tipe (int_of_string (List.nth (List.nth tipes 2) 1))
+      in
+      (first_tipe, second_tipe)
+  in
+
+  let pokemon_stats = Csv.load "lib/python/data/pokemon_stats.csv" in
+
+  let stat_list = filter_by_int pokemon_stats pokemon_id in
+  let base_stats =
+    {
+      hp = int_of_string (List.nth (List.hd stat_list) 2);
+      atk = int_of_string (List.nth (List.nth stat_list 1) 2);
+      def = int_of_string (List.nth (List.nth stat_list 2) 2);
+      spatk = int_of_string (List.nth (List.nth stat_list 3) 2);
+      spdef = int_of_string (List.nth (List.nth stat_list 4) 2);
+      spd = int_of_string (List.nth (List.nth stat_list 5) 2);
+      acc = 100;
+      eva = 100;
+    }
+  in
+  let cur_stats = calc_current_stats base_stats nat lvl "healthy" zero_stats in
   (*Raises BadPokemon if not a valid species*)
   if lvl < 1 || lvl > 100 || not (List.mem nat valid_natures) then
     raise BadPokemon
   else
-    let cur_stats =
-      calc_current_stats info.stats nat lvl "healthy" zero_stats
-    in
     let is_dual_type =
-      match info.tipe with
+      match tipe with
       | _, NoneType -> false
       | _ -> true
     in
     {
       species = String.lowercase_ascii name;
       is_dual_type;
-      tipe = info.tipe;
-      base_stats = info.stats;
+      tipe;
+      base_stats;
       cur_stats;
       stat_stages = zero_stats;
       moves = [];
