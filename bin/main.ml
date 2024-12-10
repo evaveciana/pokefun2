@@ -21,11 +21,11 @@ open Pokefun.Battle
    print_endline ascii_art with | Failure _ -> print_endline "Invalid Pokémon\n
    index." | _ -> print_endline "Error loading or parsing ASCII file."
 
-   (* Main function *) let () = let filename = "lib/python/data/ascii.csv" in
-   let pokemon_index = 0 (* Change this index to select the desired Pokémon *)
-   in print_pokemon_in_ascii filename pokemon_index (* let
-   print_pokemon_in_ascii = (*100 characters per row*) let ascii_file = Csv.load
-   "lib/python/data/ascii.csv" in *) *)
+   (* Main function *) let () = let filename = "data/ascii.csv" in let
+   pokemon_index = 0 (* Change this index to select the desired Pokémon *) in
+   print_pokemon_in_ascii filename pokemon_index (* let print_pokemon_in_ascii =
+   (*100 characters per row*) let ascii_file = Csv.load "data/ascii.csv" in
+   *) *)
 
 (** Game loop for a single player*)
 let play = main_menu ()

@@ -48,7 +48,46 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
   | _ ->
       failwith "Both teams must have at least one Pokémon to start the battle."
 
-let create_random_team () : team = failwith "TODO"
+let create_random_team () : team =
+  let level = 50 in
+  let random_nature =
+    List.nth valid_natures (Random.int (List.length valid_natures))
+  in
+  let random_species =
+    let species_list = every_pokemon () in
+    List.nth species_list (Random.int (List.length species_list))
+  in
+  let random_moves species =
+    let moves = get_moves species in
+    let rec pick_moves n moves acc =
+      if n = 0 then acc
+      else
+        let move = List.nth moves (Random.int (List.length moves)) in
+        pick_moves (n - 1) moves (move :: acc)
+    in
+    pick_moves 4 moves []
+  in
+
+  let create_random_pokemon species =
+    let level = level in
+    let nature = random_nature in
+    let pokemon = create species level nature in
+    let moves = random_moves species in
+    let updated_pokemon =
+      List.fold_left (fun p move -> add_pokemon_move p move.id) pokemon moves
+    in
+    updated_pokemon
+  in
+
+  let rec generate_team n acc =
+    if n = 6 then acc
+    else
+      let species = random_species in
+      let pokemon = create_random_pokemon species in
+      generate_team (n + 1) (pokemon :: acc)
+  in
+  generate_team 0 []
+
 let create_ai_team () : team = failwith "TODO"
 
 (*in battle choosing a move*)

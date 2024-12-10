@@ -4,8 +4,8 @@ open Pokefun.Pokemon
 let make_stats_test (name, f, input, expected) =
   name >:: fun _ -> assert_equal expected (f input) ~printer:string_of_int
 
-let dual_pokemon = create "Bulbasaur" 1 "hardy"
-let non_dual_pokemon = create "Charmander" 5 "quiet"
+let dual_pokemon = create "bulbasaur" 1 "hardy"
+let non_dual_pokemon = create "charmander" 5 "quiet"
 
 let pokemon_stats_tests =
   [
