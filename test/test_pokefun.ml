@@ -81,6 +81,24 @@ let other_pokemon_tests =
     ( "Bad add move 3" >:: fun _ ->
       assert_raises (Failure "This move is not permitted by this species")
         (fun () -> add_pokemon_move dual_pokemon 58) );
+    ( "Get move ID from name" >:: fun _ ->
+      assert_equal 24
+        (get_move_id_from_name "double-kick")
+        ~printer:string_of_int );
+    ( "Move to string" >:: fun _ ->
+      assert_equal
+        "Vine Whip (Type: Grass, Power:\n\
+        \     45, PP: 25, Accuracy: 100, Damage Class: Physical)"
+        (move_to_string (example_move ()))
+        ~printer:Fun.id );
+    ( "Pokemon to string" >:: fun _ ->
+      assert_equal
+        "Bulbasaur: Swords Dance (Type: Normal, Power: , PP: 20, Accuracy: 100, \n\
+        \        Damage Class: Status)"
+        (pokemon_to_string (add_pokemon_move dual_pokemon 14))
+        ~printer:Fun.id );
+    ( "Create move from name" >:: fun _ ->
+      assert_equal (example_move ()) (create_move_from_name "vine-whip") );
   ]
 
 let tests =
