@@ -238,7 +238,7 @@ let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
 
 (*returns list of move ids*)
 let get_pokemon_id poke_name =
-  let pokemon = Csv.load "data/pokemon.csv" in
+  let pokemon = Csv.load "../data/pokemon.csv" in
 
   (* Find the Pokémon ID based on the given name *)
   match List.find_opt (fun row -> List.nth row 1 = poke_name) pokemon with
@@ -247,7 +247,9 @@ let get_pokemon_id poke_name =
   | None -> failwith "Not valid pokemon"
 
 let get_move_ids pokemon_id =
-  let (pokemon_moves : string list list) = Csv.load "data/pokemon_moves.csv" in
+  let (pokemon_moves : string list list) =
+    Csv.load "../data/pokemon_moves.csv"
+  in
 
   List.fold_left
     (fun acc elt ->
@@ -257,7 +259,7 @@ let get_move_ids pokemon_id =
     [] pokemon_moves
 
 let get_type_name type_id =
-  let types = Csv.load "data/types.csv" in
+  let types = Csv.load "../data/types.csv" in
 
   match
     List.find_opt (fun row -> List.hd row = string_of_int type_id) types
@@ -266,7 +268,7 @@ let get_type_name type_id =
   | _ -> "Unknown"
 
 let get_move_id_from_name (move_name : string) : int =
-  let moves = Csv.load "data/moves.csv" in
+  let moves = Csv.load "../data/moves.csv" in
 
   match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
   | Some [ id; _; _; _; _; _; _; _; _; _; _; _; _; _; _ ] -> int_of_string id
@@ -317,7 +319,7 @@ let pokemon_to_string (pokemon : t) : string =
   pokemon.species ^ ": " ^ moves
 
 let create_move_from_name move_name =
-  let moves = Csv.load "data/moves.csv" in
+  let moves = Csv.load "../data/moves.csv" in
 
   match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
   | Some
@@ -382,7 +384,7 @@ let create_move_from_name move_name =
   | None -> failwith "Not valid move_id"
 
 let create_move_from_id move_id =
-  let moves = Csv.load "data/moves.csv" in
+  let moves = Csv.load "../data/moves.csv" in
 
   match List.find_opt (fun row -> List.hd row = move_id) moves with
   | Some
@@ -449,7 +451,7 @@ let create_move_from_id move_id =
 let display_learnable_moves (pokemon_species : string) : unit =
   let poke_id = get_pokemon_id pokemon_species in
   let move_ids = get_move_ids poke_id in
-  let moves = Csv.load "data/moves.csv" in
+  let moves = Csv.load "../data/moves.csv" in
 
   let rec find_details move_id =
     match
@@ -546,7 +548,7 @@ let get_info_from_species (species : string) : p_info = failwith "TODO"
 let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
 
 let create name lvl nat =
-  let pokemon_tipes = Csv.load "data/pokemon_types.csv" in
+  let pokemon_tipes = Csv.load "../data/pokemon_types.csv" in
   let pokemon_id = get_pokemon_id name in
 
   let filter_by_int data id =
@@ -592,7 +594,7 @@ let create name lvl nat =
       (first_tipe, second_tipe)
   in
 
-  let pokemon_stats = Csv.load "data/pokemon_stats.csv" in
+  let pokemon_stats = Csv.load "../data/pokemon_stats.csv" in
 
   let stat_list = filter_by_int pokemon_stats pokemon_id in
   let base_stats =

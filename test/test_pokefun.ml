@@ -1,6 +1,9 @@
 open OUnit2
 open Pokefun.Pokemon
 
+let () = print_endline (Sys.getcwd ())
+(* This will print the current working directory *)
+
 let make_stats_test (name, f, input, expected) =
   name >:: fun _ -> assert_equal expected (f input) ~printer:string_of_int
 
