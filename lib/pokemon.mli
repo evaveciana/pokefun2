@@ -20,8 +20,7 @@ type tipe =
   | Dragon
   | Steel
   | Fairy
-  | NoneType
-(** type for a Pokemon type *)
+  | NoneType  (** type for a Pokemon type *)
 
 (* type nature *)
 (** type for a Pokemon's nature *)
@@ -75,16 +74,7 @@ exception BadPokemon
 (** Raised when a user attempts to create a Pokemon with invalid inputs. *)
 
 val zero_stats : stats
-(** A collection of stats with every stat initialized to zero. *)
-
-(* val basic_move : move *)
-(**Exposed for testing purposes*)
-
-(* val basic_tipe : tipe * tipe *)
-(**Exposed for testing purposes*)
-
-(* val basic_nature : nature *)
-(**Exposed for testing purposes*)
+(** [zero_stats] is a collection of stats with every stat initialized to zero. *)
 
 val species : t -> string
 (** [species p] is the species of pokemon [p] *)
@@ -143,8 +133,6 @@ val spd : t -> int
 val moves : t -> move list
 (** [moves p] is the list of moves currently added to [p]. *)
 
-(*Need acc and eva?*)
-
 val attack : t -> t -> move -> t * t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
@@ -159,12 +147,11 @@ val stats_to_list : stats -> int list
 (** [stats_to_list stats] is a list representation of [stats]. *)
 
 val get_move_id_from_name : string -> int
-(** [get_move_id_from_name str] is the csv move id of the move of name
-    'str'*)
+(** [get_move_id_from_name str] is the csv move id of the move of name 'str'*)
 
 val move_to_string : move -> string
-(** [move_to_string move] is the necessary information in string form of
-    move*)
+(** [move_to_string move] is the necessary information in string form of move*)
+
 val pokemon_to_string : t -> string
 (** [pokemon_to_string t] is the name and learned moves of a pokemon*)
 
@@ -175,8 +162,10 @@ val create_move_from_name : string -> move
 val display_learnable_moves : string -> unit
 (** [display_learnable_moves str] prints out each move that the pokemon of
     species str can learn, with some basic info about the move*)
+
 val example_move : unit -> move
 (** purely for testing, just returns a premade move*)
+
 val move_ids : move list -> int list
 (** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
 
