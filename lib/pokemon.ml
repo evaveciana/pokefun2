@@ -130,88 +130,73 @@ let spdef p = p.cur_stats.spdef
 let spd p = p.cur_stats.spd
 let moves p = p.moves
 
-let get_multipliers_by_nature n =
-  match n with
-  | "lonely" -> (1.0, 1.1, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "adamant" -> (1.0, 1.1, 1.0, 0.9, 1.0, 1.0, 1.0, 1.0)
-  | "naughty" -> (1.0, 1.1, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0)
-  | "brave" -> (1.0, 1.1, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0)
-  | "bold" -> (1.0, 0.9, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "impish" -> (1.0, 1.0, 1.1, 0.9, 1.0, 1.0, 1.0, 1.0)
-  | "lax" -> (1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.0, 1.0)
-  | "relaxed" -> (1.0, 1.0, 1.1, 1.0, 1.0, 0.9, 1.0, 1.0)
-  | "modest" -> (1.0, 0.9, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0)
-  | "mild" -> (1.0, 1.0, 0.9, 1.1, 1.0, 1.0, 1.0, 1.0)
-  | "rash" -> (1.0, 1.0, 1.0, 1.1, 0.9, 1.0, 1.0, 1.0)
-  | "quiet" -> (1.0, 1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.0)
-  | "calm" -> (1.0, 0.9, 1.0, 1.0, 1.1, 1.0, 1.0, 1.0)
-  | "gentle" -> (1.0, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0, 1.0)
-  | "sassy" -> (1.0, 1.0, 1.0, 1.0, 1.1, 0.9, 1.0, 1.0)
-  | "careful" -> (1.0, 1.0, 1.0, 0.9, 1.1, 1.0, 1.0, 1.0)
-  | "timid" -> (1.0, 0.9, 1.0, 1.0, 1.0, 1.1, 1.0, 1.0)
-  | "hasty" -> (1.0, 1.0, 0.9, 1.0, 1.0, 1.1, 1.0, 1.0)
-  | "jolly" -> (1.0, 1.0, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0)
-  | "naive" -> (1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 1.0, 1.0)
-  | "hardy" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "docile" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "serious" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "bashful" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "quirky" -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | _ -> failwith "Unknown nature"
+let stats_to_list stats =
+  [
+    stats.hp;
+    stats.atk;
+    stats.def;
+    stats.spatk;
+    stats.spdef;
+    stats.spd;
+    stats.acc;
+    stats.eva;
+  ]
 
-let get_multipliers_by_ailment = function
-  | "burned" -> (1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-  | "paralyzed" -> (1.0, 1.0, 1.0, 1.0, 1.0, 0.25, 1.0, 1.0)
-  | _ -> (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+let search_csv_helper_one_match filename match_col key target_col =
+  let file = Csv.load filename in
+  match List.find_opt (fun row -> List.nth row match_col = key) file with
+  | Some row -> List.nth row target_col
+  | None -> failwith "not found"
+
+let search_csv_helper_many_matches filename match_col key target_col =
+  let file = Csv.load filename in
+  List.fold_left
+    (fun acc elt ->
+      if List.nth elt match_col = key then List.nth elt target_col :: acc
+      else acc)
+    [] file
+
+let search_csv_helper_whole_row filename key =
+  let file = Csv.load filename in
+  match List.find_opt (fun row -> List.hd row = key) file with
+  | Some row -> List.tl row
+  | None -> failwith "none found"
+
+let get_multipliers_by_nature n =
+  let multipliers =
+    search_csv_helper_whole_row "../data/multipliers_by_nature" n
+  in
+  List.map float_of_string multipliers
+
+let get_multipliers_by_ailment a =
+  try
+    let multipliers =
+      search_csv_helper_whole_row "../data/multipliers_by_ailment" a
+    in
+    List.map float_of_string multipliers
+  with Failure _ -> [ 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0 ]
 
 let get_multipliers_by_stat_stages stat_stages =
-  let multiplier_by_stat_stage = function
-    | -6 -> 0.25
-    | -5 -> 2. /. 7.
-    | -4 -> 2. /. 6.
-    | -3 -> 0.4
-    | -2 -> 0.5
-    | -1 -> 2. /. 3.
-    | 0 -> 1.
-    | 1 -> 1.5
-    | 2 -> 2.
-    | 3 -> 2.5
-    | 4 -> 3.
-    | 5 -> 3.5
-    | 6 -> 4.
-    | _ -> failwith "Stat Multiplier out of range"
+  let multiplier_by_stat_stage s =
+    let multiplier =
+      search_csv_helper_one_match "../data/multipliers_by_stat_stages" 0
+        (string_of_int s) 1
+    in
+    float_of_string multiplier
   in
-  ( multiplier_by_stat_stage stat_stages.hp,
-    multiplier_by_stat_stage stat_stages.atk,
-    multiplier_by_stat_stage stat_stages.def,
-    multiplier_by_stat_stage stat_stages.spatk,
-    multiplier_by_stat_stage stat_stages.spdef,
-    multiplier_by_stat_stage stat_stages.spd,
-    multiplier_by_stat_stage stat_stages.acc,
-    multiplier_by_stat_stage stat_stages.eva )
+  List.map multiplier_by_stat_stage (stats_to_list stat_stages)
 
 let apply_multiplier stat multiplier =
   int_of_float (float_of_int stat *. multiplier)
 
-let apply_multipliers cur_stats
-    ( hp_mult,
-      atk_mult,
-      def_mult,
-      spatk_mult,
-      spdef_mult,
-      spd_mult,
-      acc_mult,
-      eva_mult ) =
-  {
-    hp = apply_multiplier cur_stats.hp hp_mult;
-    atk = apply_multiplier cur_stats.atk atk_mult;
-    def = apply_multiplier cur_stats.def def_mult;
-    spatk = apply_multiplier cur_stats.spatk spatk_mult;
-    spdef = apply_multiplier cur_stats.spdef spdef_mult;
-    spd = apply_multiplier cur_stats.spd spd_mult;
-    acc = apply_multiplier cur_stats.spd acc_mult;
-    eva = apply_multiplier cur_stats.spd eva_mult;
-  }
+let apply_multipliers cur_stats mult_list =
+  let applied =
+    List.map2 apply_multiplier (stats_to_list cur_stats) mult_list
+  in
+  match applied with
+  | [ hp; atk; def; spatk; spdef; spd; acc; eva ] ->
+      { hp; atk; def; spatk; spdef; spd; acc; eva }
+  | _ -> failwith "Invalid multiplier list"
 
 let rec apply_multipliers_list cur_stats multipliers =
   match multipliers with
@@ -236,43 +221,23 @@ let calc_current_stats base_stats nature level ailment stat_stages =
 let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
   [ hp; atk; def; spatk; spdef; spd; acc; eva ]
 
-(*returns list of move ids*)
 let get_pokemon_id poke_name =
-  let pokemon = Csv.load "../data/pokemon.csv" in
-
-  (* Find the Pokémon ID based on the given name *)
-  match List.find_opt (fun row -> List.nth row 1 = poke_name) pokemon with
-  | Some row ->
-      int_of_string (List.hd row) (* Assuming the ID is in the first column *)
-  | None -> failwith "Not valid pokemon"
+  let id = search_csv_helper_one_match "../data/pokemon.csv" 1 poke_name 0 in
+  int_of_string id
 
 let get_move_ids pokemon_id =
-  let (pokemon_moves : string list list) =
-    Csv.load "../data/pokemon_moves.csv"
+  let match_list =
+    search_csv_helper_many_matches "../data/pokemon_moves.csv" 0
+      (string_of_int pokemon_id) 2
   in
-
-  List.fold_left
-    (fun acc elt ->
-      if List.hd elt = string_of_int pokemon_id then
-        int_of_string (List.nth elt 2) :: acc
-      else acc)
-    [] pokemon_moves
+  List.map int_of_string match_list
 
 let get_type_name type_id =
-  let types = Csv.load "../data/types.csv" in
+  search_csv_helper_one_match "../data/types.csv" 0 (string_of_int type_id) 1
 
-  match
-    List.find_opt (fun row -> List.hd row = string_of_int type_id) types
-  with
-  | Some [ _; name; _; _ ] -> name
-  | _ -> "Unknown"
-
-let get_move_id_from_name (move_name : string) : int =
-  let moves = Csv.load "../data/moves.csv" in
-
-  match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
-  | Some [ id; _; _; _; _; _; _; _; _; _; _; _; _; _; _ ] -> int_of_string id
-  | _ -> failwith "Invalid move"
+let get_move_id_from_name move_name =
+  let id = search_csv_helper_one_match "../data/moves.csv" 1 move_name 0 in
+  int_of_string id
 
 let tipe_to_string (tipe : tipe) : string =
   match tipe with
