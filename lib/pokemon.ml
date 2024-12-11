@@ -929,9 +929,22 @@ let apply_effect (attacker : t) defender move =
   in
   if move.effect_chance = -1 then (a, d) else deal_damage a d move
 
-let attack attacker defender move =
-  if move.effect_id = 1 then deal_damage attacker defender move
-  else apply_effect attacker defender move
+let attack (attacker : t) (defender : t) (move : move) : t * t =
+  let attacker_move = List.find (fun m -> m = move) attacker.moves in
+  if attacker_move.pp = 0 then (
+    print_endline "Out of pp!";
+    (attacker, defender))
+  else
+    let updated_pp_move = { move with pp = move.pp - 1 } in
+    let updated_moves =
+      List.map
+        (fun m -> if m.name = move.name then updated_pp_move else m)
+        attacker.moves
+    in
+    let updated_attacker = { attacker with moves = updated_moves } in
+
+    if move.effect_id = 1 then deal_damage updated_attacker defender move
+    else apply_effect updated_attacker defender move
 
 let apply_stat_change p stat_name num_stages =
   let new_stages =
