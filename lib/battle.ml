@@ -216,7 +216,7 @@ let check_status (battle : battle_state) : battle_state =
     { battle with status = Team1Win }
   else battle
 
-let rec battle_loop (battle : battle_state) : battle_state =
+let rec battle_loop (battle : battle_state) =
   match battle.status with
   | PlayerTurn ->
       let decision = get_player_action () in
