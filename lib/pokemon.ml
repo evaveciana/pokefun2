@@ -136,30 +136,21 @@ let get_multipliers_by_ailment a =
   with Failure _ -> [ 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0 ]
 
 let get_multipliers_by_stat_stages stat_stages =
-  let multiplier_by_stat_stage = function
-    | -6 -> 0.25
-    | -5 -> 2. /. 7.
-    | -4 -> 2. /. 6.
-    | -3 -> 0.4
-    | -2 -> 0.5
-    | -1 -> 2. /. 3.
-    | 0 -> 1.
-    | 1 -> 1.5
-    | 2 -> 2.
-    | 3 -> 2.5
-    | 4 -> 3.
-    | 5 -> 3.5
-    | 6 -> 4.
-    | _ -> failwith "Stat Multiplier out of range"
+  let multiplier_by_stat_stage ss =
+    search_csv_helper_one_match "data/multipliers_by_stat_stages" 0
+      (string_of_int ss) 1
+    |> float_of_string
   in
-  ( multiplier_by_stat_stage stat_stages.hp,
-    multiplier_by_stat_stage stat_stages.atk,
-    multiplier_by_stat_stage stat_stages.def,
-    multiplier_by_stat_stage stat_stages.spatk,
-    multiplier_by_stat_stage stat_stages.spdef,
-    multiplier_by_stat_stage stat_stages.spd,
-    multiplier_by_stat_stage stat_stages.acc,
-    multiplier_by_stat_stage stat_stages.eva )
+  [
+    multiplier_by_stat_stage stat_stages.hp;
+    multiplier_by_stat_stage stat_stages.atk;
+    multiplier_by_stat_stage stat_stages.def;
+    multiplier_by_stat_stage stat_stages.spatk;
+    multiplier_by_stat_stage stat_stages.spdef;
+    multiplier_by_stat_stage stat_stages.spd;
+    multiplier_by_stat_stage stat_stages.acc;
+    multiplier_by_stat_stage stat_stages.eva;
+  ]
 
 let apply_multiplier stat multiplier =
   int_of_float (float_of_int stat *. multiplier)
@@ -188,7 +179,11 @@ let calc_current_stats base_stats nature level ailment (stat_stages : stats) =
       acc = 100;
       eva = 100;
     }
-    [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
+    [
+      get_multipliers_by_nature nature;
+      get_multipliers_by_ailment ailment;
+      get_multipliers_by_stat_stages stat_stages;
+    ]
 
 let get_pokemon_id poke_name =
   let pokemon = Csv.load "lib/python/data/pokemon.csv" in
