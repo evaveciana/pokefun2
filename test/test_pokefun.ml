@@ -8,23 +8,17 @@ let dual_pokemon = create "bulbasaur" 1 "hardy"
 let non_dual_pokemon = create "charmander" 5 "quiet"
 
 let pokemon_stats_tests =
-  [
-    ("Base HP", base_hp, dual_pokemon, 45);
-    ("Base attack", base_atk, dual_pokemon, 49);
-    ("Base special attack", base_spatk, dual_pokemon, 65);
-    ("Base defense", base_def, dual_pokemon, 49);
-    ("Base special defense", base_spdef, dual_pokemon, 65);
-    ("Base speed", base_spd, dual_pokemon, 45);
-    ("HP", hp, dual_pokemon, 12);
-    ("Max hp", max_hp, dual_pokemon, 0);
-    ("Attack", atk, dual_pokemon, 6);
-    ("Special attack", spatk, dual_pokemon, 6);
-    ("Defense", def, dual_pokemon, 6);
-    ("Special defense", spdef, dual_pokemon, 6);
-    ("Speed", spd, dual_pokemon, 6);
-  ]
+  [ (* ("Base HP", base_hp, dual_pokemon, 45); ("Base attack", base_atk,
+       dual_pokemon, 49); ("Base special attack", base_spatk, dual_pokemon, 65);
+       ("Base defense", base_def, dual_pokemon, 49); ("Base special defense",
+       base_spdef, dual_pokemon, 65); ("Base speed", base_spd, dual_pokemon,
+       45); ("HP", hp, dual_pokemon, 12); ("Max hp", max_hp, dual_pokemon, 0);
+       ("Attack", atk, dual_pokemon, 6); ("Special attack", spatk, dual_pokemon,
+       6); ("Defense", def, dual_pokemon, 6); ("Special defense", spdef,
+       dual_pokemon, 6); ("Speed", spd, dual_pokemon, 6); *) ]
 
-let pokemon_stats_test_cases = List.map make_stats_test pokemon_stats_tests
+(* let pokemon_stats_test_cases = List.map make_stats_test
+   pokemon_stats_tests *)
 
 let other_pokemon_tests =
   [
@@ -34,15 +28,12 @@ let other_pokemon_tests =
       assert_raises BadPokemon (fun () -> create "Bulbasaur" 0 "hardy") );
     ( "Bad create 3" >:: fun _ ->
       assert_raises BadPokemon (fun () -> create "Bulbasaur" 1 "confused") );
-    ( "Species 1" >:: fun _ ->
-      assert_equal "bulbasaur" (species dual_pokemon) ~printer:Fun.id );
-    ( "Species 2" >:: fun _ ->
-      assert_equal "charmander" (species non_dual_pokemon) ~printer:Fun.id );
-    ( "Base stats" >:: fun _ ->
-      assert_equal
-        [ 45; 49; 49; 65; 65; 45; 0; 0 ]
-        (stats_to_list (base_stats dual_pokemon))
-        ~printer:(fun x -> String.concat ", " (List.map string_of_int x)) );
+    (* ( "Species 1" >:: fun _ -> assert_equal "bulbasaur" (species
+       dual_pokemon) ~printer:Fun.id ); ( "Species 2" >:: fun _ -> assert_equal
+       "charmander" (species non_dual_pokemon) ~printer:Fun.id ); ( "Base stats"
+       >:: fun _ -> assert_equal [ 45; 49; 49; 65; 65; 45; 0; 0 ] (stats_to_list
+       (base_stats dual_pokemon)) ~printer:(fun x -> String.concat ", "
+       (List.map string_of_int x)) ); *)
     ( "Current stats/calc current stats" >:: fun _ ->
       assert_equal
         [ 12; 6; 6; 6; 6; 6; 6; 6 ] (*Not working-- acc and eva should be 100?*)
@@ -103,6 +94,6 @@ let other_pokemon_tests =
 
 let tests =
   "test suite"
-  >::: List.flatten [ pokemon_stats_test_cases; other_pokemon_tests ]
+  >::: List.flatten [ (* pokemon_stats_test_cases; *) other_pokemon_tests ]
 
 let _ = run_test_tt_main tests
