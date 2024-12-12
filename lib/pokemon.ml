@@ -11,59 +11,18 @@ type stats = {
   eva : int;
 }
 
-type tipe =
-  | Normal
-  | Fire
-  | Water
-  | Grass
-  | Electric
-  | Ice
-  | Fighting
-  | Poison
-  | Ground
-  | Flying
-  | Psychic
-  | Bug
-  | Rock
-  | Ghost
-  | Dark
-  | Dragon
-  | Steel
-  | Fairy
-  | NoneType
+(* type tipe = | Normal | Fire | Water | Grass | Electric | Ice | Fighting |
+   Poison | Ground | Flying | Psychic | Bug | Rock | Ghost | Dark | Dragon |
+   Steel | Fairy | NoneType *)
 
 (* type nature = | Hardy | Lonely | Brave | Adamant | Naughty | Bold | Docile |
    Relaxed | Impish | Lax | Timid | Hasty | Serious | Jolly | Naive | Modest |
    Mild | Quiet | Bashful | Rash | Calm | Gentle | Sassy | Careful | Quirky *)
 
-let valid_natures =
-  [
-    "hardy";
-    "lonely";
-    "brave";
-    "adamant";
-    "naughty";
-    "bold";
-    "docile";
-    "relaxed";
-    "impish";
-    "lax";
-    "timid";
-    "hasty";
-    "serious";
-    "jolly";
-    "naive";
-    "modest";
-    "mild";
-    "quiet";
-    "bashful";
-    "rash";
-    "calm";
-    "gentle";
-    "sassy";
-    "careful";
-    "quirky";
-  ]
+(* let valid_natures = [ "hardy"; "lonely"; "brave"; "adamant"; "naughty";
+   "bold"; "docile"; "relaxed"; "impish"; "lax"; "timid"; "hasty"; "serious";
+   "jolly"; "naive"; "modest"; "mild"; "quiet"; "bashful"; "rash"; "calm";
+   "gentle"; "sassy"; "careful"; "quirky"; ] *)
 
 type damage_class =
   | Status
@@ -77,7 +36,7 @@ type target =
 type move = {
   id : int;
   name : string;
-  tipe : tipe;
+  tipe : string;
   power : int;
   pp : int;
   accuracy : int;
@@ -96,7 +55,7 @@ let valid_ailments =
 type t = {
   species : string;
   is_dual_type : bool;
-  tipe : tipe * tipe;
+  tipe : string * string;
   base_stats : stats;
   cur_stats : stats;
   stat_stages : stats;
@@ -112,22 +71,17 @@ exception BadPokemon
 let zero_stats =
   { hp = 0; atk = 0; def = 0; spatk = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
 
-let species p = p.species
-let base_stats p = p.base_stats
-let cur_stats p = p.cur_stats (* Modify with ailment and stat stages *)
-let base_hp p = p.base_stats.hp
-let base_atk p = p.base_stats.atk
-let base_spatk p = p.base_stats.spatk
-let base_def p = p.base_stats.def
-let base_spdef p = p.base_stats.spdef
-let base_spd p = p.base_stats.spd
-let hp p = p.cur_stats.hp
-let max_hp p = 0 (* TODO*)
-let atk p = p.cur_stats.atk
-let def p = p.cur_stats.def
-let spatk p = p.cur_stats.spatk
-let spdef p = p.cur_stats.spdef
-let spd p = p.cur_stats.spd
+(* let species p = p.species let base_stats p = p.base_stats*)
+let cur_stats p = p.cur_stats
+
+(* Modify with ailment and stat stages *)
+(*let base_hp p = *)
+(* p.base_stats.hp let base_atk p = p.base_stats.atk let base_spatk p =
+   p.base_stats.spatk let base_def p = p.base_stats.def let base_spdef p =
+   p.base_stats.spdef let base_spd p = p.base_stats.spd let hp p =
+   p.cur_stats.hp let max_hp p = 0 (* TODO*) let atk p = p.cur_stats.atk let def
+   p = p.cur_stats.def let spatk p = p.cur_stats.spatk let spdef p =
+   p.cur_stats.spdef let spd p = p.cur_stats.spd*)
 let moves p = p.moves
 
 let stats_to_list stats =
@@ -141,6 +95,11 @@ let stats_to_list stats =
     stats.acc;
     stats.eva;
   ]
+
+let list_to_stats = function
+  | [ hp; atk; def; spatk; spdef; spd; acc; eva ] ->
+      { hp; atk; def; spatk; spdef; spd; acc; eva }
+  | _ -> failwith "Invalid stats list"
 
 let search_csv_helper_one_match filename match_col key target_col =
   let file = Csv.load filename in
@@ -156,22 +115,22 @@ let search_csv_helper_many_matches filename match_col key target_col =
       else acc)
     [] file
 
-let search_csv_helper_whole_row filename key =
+let search_csv_helper_whole_row filename match_col key start_col =
   let file = Csv.load filename in
-  match List.find_opt (fun row -> List.hd row = key) file with
-  | Some row -> List.tl row
+  match List.find_opt (fun row -> List.nth row match_col = key) file with
+  | Some row -> List.filteri (fun i _ -> i >= start_col) row
   | None -> failwith "none found"
 
 let get_multipliers_by_nature n =
   let multipliers =
-    search_csv_helper_whole_row "../data/multipliers_by_nature" n
+    search_csv_helper_whole_row "../data/multipliers_by_nature" 0 n 1
   in
   List.map float_of_string multipliers
 
 let get_multipliers_by_ailment a =
   try
     let multipliers =
-      search_csv_helper_whole_row "../data/multipliers_by_ailment" a
+      search_csv_helper_whole_row "../data/multipliers_by_ailment" 0 a 1
     in
     List.map float_of_string multipliers
   with Failure _ -> [ 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0 ]
@@ -193,17 +152,14 @@ let apply_multipliers cur_stats mult_list =
   let applied =
     List.map2 apply_multiplier (stats_to_list cur_stats) mult_list
   in
-  match applied with
-  | [ hp; atk; def; spatk; spdef; spd; acc; eva ] ->
-      { hp; atk; def; spatk; spdef; spd; acc; eva }
-  | _ -> failwith "Invalid multiplier list"
+  list_to_stats applied
 
 let rec apply_multipliers_list cur_stats multipliers =
   match multipliers with
   | [] -> cur_stats
   | h :: t -> apply_multipliers_list (apply_multipliers cur_stats h) t
 
-let calc_current_stats base_stats nature level ailment stat_stages =
+let calc_current_stats base_stats nature level ailment (stat_stages : stats) =
   let stat_aux base_stat level = ((2 * base_stat) + 31 + 21) * level / 100 in
   apply_multipliers_list
     {
@@ -217,9 +173,6 @@ let calc_current_stats base_stats nature level ailment stat_stages =
       eva = 100;
     }
     [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
-
-let stats_to_list { hp; atk; def; spatk; spdef; spd; acc; eva } =
-  [ hp; atk; def; spatk; spdef; spd; acc; eva ]
 
 let get_pokemon_id poke_name =
   let id = search_csv_helper_one_match "../data/pokemon.csv" 1 poke_name 0 in
@@ -239,27 +192,19 @@ let get_move_id_from_name move_name =
   let id = search_csv_helper_one_match "../data/moves.csv" 1 move_name 0 in
   int_of_string id
 
-let tipe_to_string (tipe : tipe) : string =
-  match tipe with
-  | Normal -> "Normal"
-  | Fighting -> "Fighting"
-  | Flying -> "Flying"
-  | Poison -> "Poison"
-  | Ground -> "Ground"
-  | Rock -> "Rock"
-  | Bug -> "Bug"
-  | Ghost -> "Ghost"
-  | Steel -> "Steel"
-  | Fire -> "Fire"
-  | Water -> "Water"
-  | Grass -> "Grass"
-  | Electric -> "Electric"
-  | Psychic -> "Psychic"
-  | Ice -> "Ice"
-  | Dragon -> "Dragon"
-  | Dark -> "Dark"
-  | Fairy -> "Fairy"
-  | NoneType -> "NoneType"
+(* let tipe_to_string = function | Normal -> "Normal" | Fighting -> "Fighting" |
+   Flying -> "Flying" | Poison -> "Poison" | Ground -> "Ground" | Rock -> "Rock"
+   | Bug -> "Bug" | Ghost -> "Ghost" | Steel -> "Steel" | Fire -> "Fire" | Water
+   -> "Water" | Grass -> "Grass" | Electric -> "Electric" | Psychic -> "Psychic"
+   | Ice -> "Ice" | Dragon -> "Dragon" | Dark -> "Dark" | Fairy -> "Fairy" |
+   NoneType -> "NoneType"
+
+   let string_to_tipe = function | "Normal" -> Normal | "Fighting" -> Fighting |
+   "Flying" -> Flying | "Poison" -> Poison | "Ground" -> Ground | "Rock" -> Rock
+   | "Bug" -> Bug | "Ghost" -> Ghost | "Steel" -> Steel | "Fire" -> Fire |
+   "Water" -> Water | "Grass" -> Grass | "Electric" -> Electric | "Psychic" ->
+   Psychic | "Ice" -> Ice | "Dragon" -> Dragon | "Dark" -> Dark | "Fairy" ->
+   Fairy | "NoneType" -> NoneType | _ -> failwith "Invalid tipe" *)
 
 let damage_class_to_string (damage_class : damage_class) : string =
   match damage_class with
@@ -267,16 +212,16 @@ let damage_class_to_string (damage_class : damage_class) : string =
   | Special -> "Special"
   | Status -> "Status"
 
-let move_to_string (move : move) : string =
-  move.name ^ " (Type: " ^ tipe_to_string move.tipe ^ ", Power: "
-  ^ string_of_int move.power ^ ", PP: " ^ string_of_int move.pp ^ ", Accuracy: "
+let move_to_string move =
+  move.name ^ " (Type: " ^ move.tipe ^ ", Power: " ^ string_of_int move.power
+  ^ ", PP: " ^ string_of_int move.pp ^ ", Accuracy: "
   ^ string_of_int move.accuracy
   ^ ", Damage Class: "
   ^ damage_class_to_string move.damage_class
   ^ ")"
 
 (*TODO FULLY IMPLEMENT LATER !!! just minimal for now*)
-let pokemon_to_string (pokemon : t) : string =
+let pokemon_to_string pokemon =
   let moves =
     if List.length pokemon.moves = 0 then "No moves available."
     else pokemon.moves |> List.map move_to_string |> String.concat "\n"
@@ -284,51 +229,28 @@ let pokemon_to_string (pokemon : t) : string =
   pokemon.species ^ ": " ^ moves
 
 let create_move_from_name move_name =
-  let moves = Csv.load "../data/moves.csv" in
-
-  match List.find_opt (fun row -> List.nth row 1 = move_name) moves with
-  | Some
-      [
-        id;
-        identifier;
-        _;
-        type_id;
-        power;
-        pp;
-        accuracy;
-        priority;
-        target_id;
-        damage_class_id;
-        effect_id;
-        effect_chance;
-        _;
-        _;
-        _;
-      ] ->
+  match search_csv_helper_whole_row "../data/moves.csv" 1 move_name 0 with
+  | [
+   id;
+   identifier;
+   _;
+   type_id;
+   power;
+   pp;
+   accuracy;
+   priority;
+   target_id;
+   damage_class_id;
+   effect_id;
+   effect_chance;
+   _;
+   _;
+   _;
+  ] ->
       {
         id = int_of_string id;
         name = identifier;
-        tipe =
-          (match int_of_string type_id with
-          | 1 -> Normal
-          | 2 -> Fighting
-          | 3 -> Flying
-          | 4 -> Poison
-          | 5 -> Ground
-          | 6 -> Rock
-          | 7 -> Bug
-          | 8 -> Ghost
-          | 9 -> Steel
-          | 10 -> Fire
-          | 11 -> Water
-          | 12 -> Grass
-          | 13 -> Electric
-          | 14 -> Psychic
-          | 15 -> Ice
-          | 16 -> Dragon
-          | 17 -> Dark
-          | 18 -> Fairy
-          | _ -> failwith "Unknown type");
+        tipe = get_type_name (int_of_string type_id);
         power = int_of_string power;
         pp = int_of_string pp;
         accuracy = int_of_string accuracy;
@@ -345,75 +267,9 @@ let create_move_from_name move_name =
         effect_id = int_of_string effect_id;
         effect_chance = int_of_string effect_chance;
       }
-  | Some _ -> failwith "TODO"
-  | None -> failwith "Not valid move_id"
+  | _ -> failwith "Invalid move ID"
 
-let create_move_from_id move_id =
-  let moves = Csv.load "../data/moves.csv" in
-
-  match List.find_opt (fun row -> List.hd row = move_id) moves with
-  | Some
-      [
-        id;
-        identifier;
-        _;
-        type_id;
-        power;
-        pp;
-        accuracy;
-        priority;
-        target_id;
-        damage_class_id;
-        effect_id;
-        effect_chance;
-        _;
-        _;
-        _;
-      ] ->
-      {
-        id = int_of_string id;
-        name = identifier;
-        tipe =
-          (match int_of_string type_id with
-          | 1 -> Normal
-          | 2 -> Fighting
-          | 3 -> Flying
-          | 4 -> Poison
-          | 5 -> Ground
-          | 6 -> Rock
-          | 7 -> Bug
-          | 8 -> Ghost
-          | 9 -> Steel
-          | 10 -> Fire
-          | 11 -> Water
-          | 12 -> Grass
-          | 13 -> Electric
-          | 14 -> Psychic
-          | 15 -> Ice
-          | 16 -> Dragon
-          | 17 -> Dark
-          | 18 -> Fairy
-          | _ -> failwith "Unknown type");
-        power = int_of_string power;
-        pp = int_of_string pp;
-        accuracy = int_of_string accuracy;
-        priority = int_of_string priority;
-        target =
-          (if int_of_string target_id = 10 then Enemy
-           else if int_of_string target_id = 11 then Self
-           else failwith "Not 10 or 11");
-        damage_class =
-          (if int_of_string damage_class_id = 1 then Status
-           else if int_of_string damage_class_id = 2 then Physical
-           else if int_of_string damage_class_id = 3 then Special
-           else failwith "Not 1, 2, or 3");
-        effect_id = int_of_string effect_id;
-        effect_chance = int_of_string effect_chance;
-      }
-  | Some _ -> failwith "TODO"
-  | None -> failwith "Not valid move_id"
-
-let display_learnable_moves (pokemon_species : string) : unit =
+let display_learnable_moves pokemon_species =
   let poke_id = get_pokemon_id pokemon_species in
   let move_ids = get_move_ids poke_id in
   let moves = Csv.load "../data/moves.csv" in
@@ -464,7 +320,7 @@ let vine_whip =
   {
     id = 22;
     name = "Vine Whip";
-    tipe = Grass;
+    tipe = "Grass";
     power = 45;
     pp = 25;
     accuracy = 100;
@@ -479,7 +335,7 @@ let poison_powder =
   {
     id = 77;
     name = "Poison Powder";
-    tipe = Poison;
+    tipe = "Poison";
     power = 0;
     pp = 35;
     accuracy = 75;
@@ -503,7 +359,7 @@ let move_ids lst =
   get_move_ids lst move_identifiers
 
 type p_info = {
-  tipe : tipe * tipe;
+  tipe : string * string;
   stats : stats;
   moves : move list;
   possible_abilities : string list;
@@ -527,31 +383,13 @@ let create name lvl nat =
 
   let tipe =
     let tipes = filter_by_int pokemon_tipes pokemon_id in
+
     let match_tipe tipe_id =
-      match tipe_id with
-      | 1 -> Normal
-      | 2 -> Fighting
-      | 3 -> Flying
-      | 4 -> Poison
-      | 5 -> Ground
-      | 6 -> Rock
-      | 7 -> Bug
-      | 8 -> Ghost
-      | 9 -> Steel
-      | 10 -> Fire
-      | 11 -> Water
-      | 12 -> Grass
-      | 13 -> Electric
-      | 14 -> Psychic
-      | 15 -> Ice
-      | 16 -> Dragon
-      | 17 -> Dark
-      | 18 -> Fairy
-      | _ -> failwith "Unknown type"
+      search_csv_helper_one_match "data/types.csv" 0 (string_of_int tipe_id) 1
     in
 
     let first_tipe = match_tipe (int_of_string (List.nth (List.hd tipes) 1)) in
-    if List.length tipes = 1 then (first_tipe, NoneType)
+    if List.length tipes = 1 then (first_tipe, "NoneType")
     else
       let second_tipe =
         match_tipe (int_of_string (List.nth (List.nth tipes 2) 1))
@@ -576,146 +414,184 @@ let create name lvl nat =
   in
   let cur_stats = calc_current_stats base_stats nat lvl "healthy" zero_stats in
   (*Raises BadPokemon if not a valid species*)
-  if lvl < 1 || lvl > 100 || not (List.mem nat valid_natures) then
-    raise BadPokemon
-  else
-    let is_dual_type =
-      match tipe with
-      | _, NoneType -> false
-      | _ -> true
-    in
-    {
-      species = String.lowercase_ascii name;
-      is_dual_type;
-      tipe;
-      base_stats;
-      cur_stats;
-      stat_stages = zero_stats;
-      moves = [];
-      level = lvl;
-      ailment = "healthy";
-      nature = String.lowercase_ascii nat;
-      cur_hp = cur_stats.hp;
-    }
+  try
+    ignore (search_csv_helper_one_match "data/multipliers_by_nature" 0 nat 0);
+    if lvl < 1 || lvl > 100 then raise BadPokemon
+    else
+      let is_dual_type = if snd tipe = "NoneType" then false else true in
+
+      {
+        species = String.lowercase_ascii name;
+        is_dual_type;
+        tipe;
+        base_stats;
+        cur_stats;
+        stat_stages = zero_stats;
+        moves = [];
+        level = lvl;
+        ailment = "healthy";
+        nature = String.lowercase_ascii nat;
+        cur_hp = cur_stats.hp;
+      }
+  with Failure _ -> raise BadPokemon
 
 let calc_effectiveness_mult (move : move) (defender : t) =
   let multiplier move_type target_type =
-    match (move_type, target_type) with
-    (* Normal *)
-    | Normal, Rock | Normal, Steel -> 0.5
-    | Normal, Ghost -> 0.0
-    | Normal, _ -> 1.0
-    (* Fire *)
-    | Fire, Fire | Fire, Water | Fire, Rock | Fire, Dragon -> 0.5
-    | Fire, Grass | Fire, Bug | Fire, Ice | Fire, Steel -> 2.0
-    | Fire, _ -> 1.0
-    (* Water *)
-    | Water, Water | Water, Grass | Water, Dragon -> 0.5
-    | Water, Fire | Water, Ground | Water, Rock -> 2.0
-    | Water, _ -> 1.0
-    (* Electric *)
-    | Electric, Electric | Electric, Grass | Electric, Dragon -> 0.5
-    | Electric, Water | Electric, Flying -> 2.0
-    | Electric, Ground -> 0.0
-    | Electric, _ -> 1.0
-    (* Grass *)
-    | Grass, Fire
-    | Grass, Grass
-    | Grass, Poison
-    | Grass, Flying
-    | Grass, Bug
-    | Grass, Dragon
-    | Grass, Steel -> 0.5
-    | Grass, Water | Grass, Ground | Grass, Rock -> 2.0
-    | Grass, _ -> 1.0
-    (* Ice *)
-    | Ice, Fire | Ice, Water | Ice, Ice | Ice, Steel -> 0.5
-    | Ice, Grass | Ice, Ground | Ice, Flying | Ice, Dragon -> 2.0
-    | Ice, _ -> 1.0
-    (* Fighting *)
-    | Fighting, Poison
-    | Fighting, Flying
-    | Fighting, Psychic
-    | Fighting, Bug
-    | Fighting, Fairy -> 0.5
-    | Fighting, Normal
-    | Fighting, Rock
-    | Fighting, Steel
-    | Fighting, Ice
-    | Fighting, Dark -> 2.0
-    | Fighting, Ghost -> 0.0
-    | Fighting, _ -> 1.0
-    (* Poison *)
-    | Poison, Poison | Poison, Ground | Poison, Rock | Poison, Ghost -> 0.5
-    | Poison, Grass | Poison, Fairy -> 2.0
-    | Poison, Steel -> 0.0
-    | Poison, _ -> 1.0
-    (* Ground *)
-    | Ground, Grass | Ground, Bug -> 0.5
-    | Ground, Fire
-    | Ground, Electric
-    | Ground, Poison
-    | Ground, Rock
-    | Ground, Steel -> 2.0
-    | Ground, Flying -> 0.0
-    | Ground, _ -> 1.0
-    (* Flying *)
-    | Flying, Electric | Flying, Rock | Flying, Steel -> 0.5
-    | Flying, Grass | Flying, Fighting | Flying, Bug -> 2.0
-    | Flying, _ -> 1.0
-    (* Psychic *)
-    | Psychic, Psychic | Psychic, Steel -> 0.5
-    | Psychic, Fighting | Psychic, Poison -> 2.0
-    | Psychic, Dark -> 0.0
-    | Psychic, _ -> 1.0
-    (* Bug *)
-    | Bug, Fire
-    | Bug, Fighting
-    | Bug, Poison
-    | Bug, Flying
-    | Bug, Ghost
-    | Bug, Steel
-    | Bug, Fairy -> 0.5
-    | Bug, Grass | Bug, Psychic | Bug, Dark -> 2.0
-    | Bug, _ -> 1.0
-    (* Rock *)
-    | Rock, Fighting | Rock, Ground | Rock, Steel -> 0.5
-    | Rock, Fire | Rock, Ice | Rock, Flying | Rock, Bug -> 2.0
-    | Rock, _ -> 1.0
-    (* Ghost *)
-    | Ghost, Dark -> 0.5
-    | Ghost, Ghost | Ghost, Psychic -> 2.0
-    | Ghost, Normal -> 0.0
-    | Ghost, _ -> 1.0
-    (* Dragon *)
-    | Dragon, Steel -> 0.5
-    | Dragon, Dragon -> 2.0
-    | Dragon, Fairy -> 0.0
-    | Dragon, _ -> 1.0
-    (* Dark *)
-    | Dark, Fighting | Dark, Dark | Dark, Fairy -> 0.5
-    | Dark, Psychic | Dark, Ghost -> 2.0
-    | Dark, _ -> 1.0
-    (* Steel *)
-    | Steel, Fire | Steel, Water | Steel, Electric | Steel, Steel -> 0.5
-    | Steel, Ice | Steel, Rock | Steel, Fairy -> 2.0
-    | Steel, _ -> 1.0
-    (* Fairy *)
-    | Fairy, Fire | Fairy, Poison | Fairy, Steel -> 0.5
-    | Fairy, Fighting | Fairy, Dragon | Fairy, Dark -> 2.0
-    | Fairy, _ -> 1.0
-    | _, _ -> failwith "This should not happen. just for exhaustiveness"
+    if move_type = "Normal" then
+      if target_type = "Rock" || target_type = "Steel" then 0.5
+      else if target_type = "Ghost" then 0.0
+      else 1.0
+    else if move_type = "Fire" then
+      if
+        target_type = "Fire" || target_type = "Water" || target_type = "Rock"
+        || target_type = "Dragon"
+      then 0.5
+      else if
+        target_type = "Grass" || target_type = "Bug" || target_type = "Ice"
+        || target_type = "Steel"
+      then 2.0
+      else 1.0
+    else if move_type = "Water" then
+      if
+        target_type = "Water" || target_type = "Grass" || target_type = "Dragon"
+      then 0.5
+      else if
+        target_type = "Fire" || target_type = "Ground" || target_type = "Rock"
+      then 2.0
+      else 1.0
+    else if move_type = "Electric" then
+      if
+        target_type = "Electric" || target_type = "Grass"
+        || target_type = "Dragon"
+      then 0.5
+      else if target_type = "Water" || target_type = "Flying" then 2.0
+      else if target_type = "Ground" then 0.0
+      else 1.0
+    else if move_type = "Grass" then
+      if
+        target_type = "Fire" || target_type = "Grass" || target_type = "Poison"
+        || target_type = "Flying" || target_type = "Bug"
+        || target_type = "Dragon" || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Water" || target_type = "Ground" || target_type = "Rock"
+      then 2.0
+      else 1.0
+    else if move_type = "Ice" then
+      if
+        target_type = "Fire" || target_type = "Water" || target_type = "Ice"
+        || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Grass" || target_type = "Ground"
+        || target_type = "Flying" || target_type = "Dragon"
+      then 2.0
+      else 1.0
+    else if move_type = "Fighting" then
+      if
+        target_type = "Poison" || target_type = "Flying"
+        || target_type = "Psychic" || target_type = "Bug"
+        || target_type = "Fairy"
+      then 0.5
+      else if
+        target_type = "Normal" || target_type = "Rock" || target_type = "Steel"
+        || target_type = "Ice" || target_type = "Dark"
+      then 2.0
+      else if target_type = "Ghost" then 0.0
+      else 1.0
+    else if move_type = "Poison" then
+      if
+        target_type = "Poison" || target_type = "Ground" || target_type = "Rock"
+        || target_type = "Ghost"
+      then 0.5
+      else if target_type = "Grass" || target_type = "Fairy" then 2.0
+      else if target_type = "Steel" then 0.0
+      else 1.0
+    else if move_type = "Ground" then
+      if target_type = "Grass" || target_type = "Bug" then 0.5
+      else if
+        target_type = "Fire" || target_type = "Electric"
+        || target_type = "Poison" || target_type = "Rock"
+        || target_type = "Steel"
+      then 2.0
+      else if target_type = "Flying" then 0.0
+      else 1.0
+    else if move_type = "Flying" then
+      if
+        target_type = "Electric" || target_type = "Rock"
+        || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Grass" || target_type = "Fighting" || target_type = "Bug"
+      then 2.0
+      else 1.0
+    else if move_type = "Psychic" then
+      if target_type = "Psychic" || target_type = "Steel" then 0.5
+      else if target_type = "Fighting" || target_type = "Poison" then 2.0
+      else if target_type = "Dark" then 0.0
+      else 1.0
+    else if move_type = "Bug" then
+      if
+        target_type = "Fire" || target_type = "Fighting"
+        || target_type = "Poison" || target_type = "Flying"
+        || target_type = "Ghost" || target_type = "Steel"
+        || target_type = "Fairy"
+      then 0.5
+      else if
+        target_type = "Grass" || target_type = "Psychic" || target_type = "Dark"
+      then 2.0
+      else 1.0
+    else if move_type = "Rock" then
+      if
+        target_type = "Fighting" || target_type = "Ground"
+        || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Fire" || target_type = "Ice" || target_type = "Flying"
+        || target_type = "Bug"
+      then 2.0
+      else 1.0
+    else if move_type = "Ghost" then
+      if target_type = "Dark" then 0.5
+      else if target_type = "Ghost" || target_type = "Psychic" then 2.0
+      else if target_type = "Normal" then 0.0
+      else 1.0
+    else if move_type = "Dragon" then
+      if target_type = "Steel" then 0.5
+      else if target_type = "Dragon" then 2.0
+      else if target_type = "Dairy" then 0.0
+      else 1.0
+    else if move_type = "Dark" then
+      if
+        target_type = "Fighting" || target_type = "Dark"
+        || target_type = "Fairy"
+      then 0.5
+      else if target_type = "Psychic" || target_type = "Ghost" then 2.0
+      else 1.0
+    else if move_type = "Steel" then
+      if
+        target_type = "Fire" || target_type = "Water"
+        || target_type = "Electric" || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Ice" || target_type = "Rock" || target_type = "Fairy"
+      then 2.0
+      else 1.0
+    else if move_type = "Fairy" then
+      if target_type = "Fire" || target_type = "Poison" || target_type = "Steel"
+      then 0.5
+      else if
+        target_type = "Ice" || target_type = "Rock" || target_type = "Fairy"
+      then 2.0
+      else 1.0
+    else failwith "Invalid type"
   in
 
   let move_type = move.tipe in
   let type1, type2 = defender.tipe in
 
   let eff1 = multiplier move_type type1 in
-  let eff2 =
-    match type2 with
-    | NoneType -> 1.0
-    | _ -> multiplier move_type type2
-  in
+  let eff2 = if type2 = "NoneType" then 1.0 else multiplier move_type type2 in
 
   eff1 *. eff2
 

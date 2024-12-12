@@ -51,8 +51,13 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
 let create_random_team () : team =
   let level = 50 in
   let random_nature =
-    List.nth valid_natures (Random.int (List.length valid_natures))
+    let natures_csv = Csv.load "data/multipliers_by_nature" in
+    let chosen_row =
+      List.nth natures_csv (Random.int (List.length natures_csv))
+    in
+    List.hd chosen_row
   in
+
   let random_species =
     let species_list = every_pokemon () in
     List.nth species_list (Random.int (List.length species_list))
@@ -172,7 +177,7 @@ let setup_fake () : battle_state =
     {
       species = "venusaur";
       is_dual_type = true;
-      tipe = (Grass, Poison);
+      tipe = ("Grass", "Poison");
       base_stats = zero_stats;
       cur_stats = zero_stats;
       stat_stages = zero_stats;

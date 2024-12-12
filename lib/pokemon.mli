@@ -1,31 +1,14 @@
 type stats
 (** type for the stats of a Pokemon *)
 
-type tipe =
-  | Normal
-  | Fire
-  | Water
-  | Grass
-  | Electric
-  | Ice
-  | Fighting
-  | Poison
-  | Ground
-  | Flying
-  | Psychic
-  | Bug
-  | Rock
-  | Ghost
-  | Dark
-  | Dragon
-  | Steel
-  | Fairy
-  | NoneType  (** type for a Pokemon type *)
+(* type tipe = | Normal | Fire | Water | Grass | Electric | Ice | Fighting |
+   Poison | Ground | Flying | Psychic | Bug | Rock | Ghost | Dark | Dragon |
+   Steel | Fairy | NoneType * type for a Pokemon type *)
 
 (* type nature *)
 (** type for a Pokemon's nature *)
 
-val valid_natures : string list
+(* val valid_natures : string list *)
 (** all the acceptable natures of a Pokmeon *)
 
 type damage_class
@@ -37,7 +20,7 @@ type target
 type move = {
   id : int;
   name : string;
-  tipe : tipe;
+  tipe : string;
   power : int;
   pp : int;
   accuracy : int;
@@ -58,7 +41,7 @@ val valid_ailments : string list
 type t = {
   species : string;
   is_dual_type : bool;
-  tipe : tipe * tipe;
+  tipe : string * string;
   base_stats : stats;
   cur_stats : stats;
   stat_stages : stats;
@@ -76,57 +59,57 @@ exception BadPokemon
 val zero_stats : stats
 (** [zero_stats] is a collection of stats with every stat initialized to zero. *)
 
-val species : t -> string
+(* val species : t -> string *)
 (** [species p] is the species of pokemon [p] *)
 
-val base_stats : t -> stats
+(* val base_stats : t -> stats *)
 (** [base_stats p] is the base stats of pokemon [p] *)
 
 val cur_stats : t -> stats
 (** [cur_stats p] is the current stats of pokemon [p], including any changes
     from burn, paralysis, etc. *)
 
-val base_hp : t -> int
+(* val base_hp : t -> int *)
 (** [base_hp p] is the base HP of pokemon [p]. *)
 
-val base_atk : t -> int
+(* val base_atk : t -> int *)
 (** [base_atk p] is the base Attack of pokemon [p]. *)
 
-val base_spatk : t -> int
+(* val base_spatk : t -> int *)
 (** [base_spatk p] is the base Special Attack of pokemon [p]. *)
 
-val base_def : t -> int
+(* val base_def : t -> int *)
 (** [base_def p] is the base Defense of pokemon [p]. *)
 
-val base_spdef : t -> int
+(* val base_spdef : t -> int *)
 (** [base_spdef p] is the base Special Defense of pokemon [p]. *)
 
-val base_spd : t -> int
+(* val base_spd : t -> int *)
 (** [base_spd p] is the base Speed of pokemon [p]. *)
 
-val hp : t -> int
+(* val hp : t -> int *)
 (** [hp p] is the current HP of pokemon [p], including changes from damage. *)
 
-val max_hp : t -> int
+(* val max_hp : t -> int *)
 (** [max_hp p] is the max HP of pokemon [p] *)
 
-val atk : t -> int
+(* val atk : t -> int *)
 (** [atk p] is the current Attack of pokemon [p], including changes from stat
     stages. *)
 
-val spatk : t -> int
+(* val spatk : t -> int *)
 (** [spatk p] is the current Special Attack of pokemon [p], including changes
     from stat stages. *)
 
-val def : t -> int
+(* val def : t -> int *)
 (** [def p] is the current Defense of pokemon [p], including changes from stat
     stages. *)
 
-val spdef : t -> int
+(* val spdef : t -> int *)
 (** [spdef p] is the current Special Defense of pokemon [p], including changes
     from stat stages. *)
 
-val spd : t -> int
+(* val spd : t -> int *)
 (** [spd p] is the current Speed of pokemon [p], including changes from stat
     stages. *)
 
