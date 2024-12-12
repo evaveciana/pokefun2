@@ -12,7 +12,6 @@ type team = t list
 type decision =
   | Attack of string
   | Switch of string
-  | UseItem of string
   | Run
 
 (* Type for the decision that a player can make *)
@@ -26,10 +25,10 @@ type battle_state = {
 }
 
 and battle_status =
-  | Idle
   | PlayerTurn
   | AITurn
-  | Ended
+  | Team1Win
+  | Team2Win
 
 (* Type for the current state of the battle *)
 
@@ -42,7 +41,7 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
         team1;
         team2;
         current_turn = 0;
-        status = Idle;
+        status = PlayerTurn;
         current_pokemon = (p1, p2);
       }
   | _ ->
@@ -123,7 +122,6 @@ let rec attack_menu battle_state =
       attack_menu battle_state
 
 let rec switch_menu () = failwith "TODO"
-let rec use_item_menu () = failwith "TODO"
 
 let rec get_player_action () =
   print_string []
@@ -131,8 +129,7 @@ let rec get_player_action () =
   match read_line () with
   | "1" | "Attack" | "attack" | "a" -> Attack ""
   | "2" | "Switch" | "switch" | "s" -> Switch ""
-  | "3" | "UseItem" | "useitem" | "u" -> UseItem ""
-  | "4" | "Run" | "run" | "r" -> Run
+  | "3" | "Run" | "run" | "r" -> Run
   | _ ->
       print_endline "Invalid action! Please try again.";
       get_player_action ()
@@ -145,24 +142,41 @@ let rec handle_player_action (action : decision) (battle : battle_state) :
       let next_action = attack_menu battle in
       handle_player_action next_action battle
   | Attack move_name ->
-      (* TODO handle logic for what a move would do and switch pokemon *)
-      print_endline ("You used the move " ^ move_name ^ "!");
-      { battle with status = AITurn }
+      if battle.status = PlayerTurn then (
+        let attacker, defender = battle.current_pokemon in
+        print_endline (attacker.species ^ " used " ^ move_name ^ "!");
+
+        let new_attacker, new_defender =
+          attack attacker defender (create_move_from_name move_name)
+        in
+        {
+          battle with
+          current_pokemon = (new_attacker, new_defender);
+          status = AITurn;
+          current_turn = battle.current_turn + 1;
+        })
+      else
+        (* switch for handling ai move *)
+        let defender, attacker = battle.current_pokemon in
+        print_endline (attacker.species ^ " used " ^ move_name ^ "!");
+        let new_attacker, new_defender =
+          attack attacker defender (create_move_from_name move_name)
+        in
+        {
+          battle with
+          current_pokemon = (new_defender, new_attacker);
+          status = PlayerTurn;
+          current_turn = battle.current_turn + 1;
+        }
   | Switch "" ->
       let next_action = switch_menu () in
       handle_player_action next_action battle
   | Switch pokemon_name ->
       print_endline ("You switched to " ^ pokemon_name ^ "!");
-      { battle with status = AITurn }
-  | UseItem "" ->
-      let next_action = use_item_menu () in
-      handle_player_action next_action battle
-  | UseItem item_name ->
-      print_endline ("You used " ^ item_name ^ "!");
-      { battle with status = AITurn }
+      { battle with status = AITurn; current_turn = battle.current_turn + 1 }
   | Run ->
       print_endline "You ran away!";
-      { battle with status = Ended }
+      { battle with status = Team2Win }
 
 let make_ai_action (battle : battle_state) : decision =
   Run (* Placeholder implementation *)
@@ -193,7 +207,33 @@ let setup_fake () : battle_state =
   let battle_state = init_battle team1 team2 in
   battle_state
 
-let battle_loop (battle : battle_state) = failwith "TODO"
+let check_status (battle : battle_state) : battle_state =
+  let fainted_team1 = List.filter (fun p1 -> p1.cur_hp <= 0) battle.team1 in
+  let fainted_team2 = List.filter (fun p2 -> p2.cur_hp <= 0) battle.team2 in
+  if List.length fainted_team1 = List.length battle.team1 then
+    { battle with status = Team2Win }
+  else if List.length fainted_team2 = List.length battle.team2 then
+    { battle with status = Team1Win }
+  else battle
+
+let rec battle_loop (battle : battle_state) : battle_state =
+  match battle.status with
+  | PlayerTurn ->
+      let decision = get_player_action () in
+      let new_state = handle_player_action decision battle in
+      battle_loop new_state
+  | AITurn ->
+      let ai_decision = make_ai_action battle in
+      let new_state = handle_player_decision ai_decision battle in
+      battle_loop new_state
+  | Team1Win ->
+      print_endline "You win! Congrats!";
+      Unix.sleepf 3.0;
+      exit 0
+  | Team2Win ->
+      print_endline "You lost! Sorry bro";
+      Unix.sleepf 3.0;
+      exit 0
 
 (*HELPER FUNCTIONS FOR THE main_menu and pick_team FUNCTIONS !!! (for terminal
   UI)*)
@@ -361,8 +401,8 @@ let rec main_menu () =
   | "1" | "Play" | "play" | "p" ->
       print_endline "Starting the game...";
       let team1 = pick_team all_pokemon in
-      (* TODO let team2 = create_ai_team () in *)
-      let battle_state = init_battle team1 [] in
+      let team2 = create_random_team () in
+      let battle_state = init_battle team1 team2 in
       battle_loop battle_state
   | "2" | "Exit" | "exit" | "e" -> exit 0
   | _ -> main_menu ()

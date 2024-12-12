@@ -595,12 +595,12 @@ let calc_effectiveness_mult (move : move) (defender : t) =
 
   eff1 *. eff2
 
-let attack a d move =
-  let attacker = create a.species a.level a.nature in
-  let defender = create d.species d.level d.nature in
-  let move_damage_class = move.damage_class in
-  let match_dmg move_damage_class =
-    match move_damage_class with
+let () = Random.self_init ()
+let roll chance = Random.int 100 < chance
+
+let deal_damage attacker defender move =
+  let a_stat, d_stat =
+    match move.damage_class with
     | Physical ->
         let attack_stat = attacker.cur_stats.atk in
         let defense_stat = defender.cur_stats.def in
@@ -609,36 +609,218 @@ let attack a d move =
         let attack_stat = attacker.cur_stats.spatk in
         let defense_stat = defender.cur_stats.spdef in
         (attack_stat, defense_stat)
-    | Status -> failwith "TODO"
+    | Status -> failwith "A move damage class is invalid"
   in
-  let a_stat =
-    match match_dmg move_damage_class with
-    | attack, _ -> float_of_int attack
-  in
-  let d_stat =
-    match match_dmg move_damage_class with
-    | _, defense -> float_of_int defense
-  in
+
   (*for now just use stage 1*)
   let calculate_crit = Random.int 16 in
   let crit = if calculate_crit = 0 then 1.5 else 1. in
-  let rand = float_of_int (85 + Random.int (100 - 85 + 1)) /. 100.0 in
+  let rand = float_of_int (85 + Random.int 16) /. 100.0 in
   (*"same type attack bonus" or STAB*)
   let stab =
     match attacker.tipe with
     | t1, t2 -> if t1 = move.tipe || t2 = move.tipe then 1.5 else 1.
   in
-  let eff_mult = calc_effectiveness_mult move d in
+  let eff_mult = calc_effectiveness_mult move defender in
   let dmg =
     (((2.0 *. float_of_int attacker.level /. 5.0) +. 2.0)
-     *. float_of_int move.power *. (a_stat /. d_stat) /. 50.0
+     *. float_of_int move.power
+     *. (float_of_int a_stat /. float_of_int d_stat)
+     /. 50.0
     +. 2.0)
     *. crit *. rand *. stab *. eff_mult
   in
   defender.cur_hp <- max 0 (int_of_float (float_of_int defender.cur_hp -. dmg));
   (attacker, defender)
 
-(*Change to actually calculate new stats*)
+(* Applies the effect of the move to the target. Calls deal_damage after if
+   needed*)
+let apply_effect (attacker : t) defender move =
+  let a, d =
+    if move.effect_chance = -1 || roll move.effect_chance then
+      let target = if move.target = Self then attacker else defender in
+      let target =
+        match move.effect_id with
+        | 1 -> (* nothing *) target
+        | 2 -> (* sleep *) { target with ailment = "asleep" }
+        | 3 -> (* poison *) { target with ailment = "poisoned" }
+        | 5 -> (* burn *) { target with ailment = "burned" }
+        | 6 -> (* freeze *) { target with ailment = "frozen" }
+        | 7 -> (* paralyze *) { target with ailment = "paralyzed" }
+        | 8 ->
+            (* kill user *)
+            attacker.cur_hp <- 0;
+            target
+        | 11 ->
+            (* raise attack by 1 *)
+            if target.stat_stages.atk <= 5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with atk = target.stat_stages.atk + 1 };
+              }
+            else target
+        | 12 ->
+            (* raise defense by 1 *)
+            if target.stat_stages.def <= 5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with def = target.stat_stages.def + 1 };
+              }
+            else target
+        | 17 ->
+            (* raise evasiveness by 1 *)
+            if target.stat_stages.eva <= 5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with eva = target.stat_stages.eva + 1 };
+              }
+            else target
+        | 19 ->
+            (* lower attack by 1 *)
+            if target.stat_stages.atk >= -5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with atk = target.stat_stages.atk - 1 };
+              }
+            else target
+        | 20 ->
+            (* lower defense by 1 *)
+            if target.stat_stages.def >= -5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with def = target.stat_stages.def - 1 };
+              }
+            else target
+        | 24 ->
+            (* lower accuracy by 1 *)
+            if target.stat_stages.acc >= -5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with acc = target.stat_stages.acc - 1 };
+              }
+            else target
+        | 26 ->
+            (* reset stat changes *) { target with stat_stages = zero_stats }
+        | 31 ->
+            (* copy enemy type *)
+            {
+              target with
+              tipe = defender.tipe;
+              is_dual_type = defender.is_dual_type;
+            }
+        | 33 ->
+            (* heal half of max hp *)
+            let new_hp = target.cur_hp + (target.cur_stats.hp / 2) in
+            { target with cur_hp = min new_hp target.cur_stats.hp }
+        | 38 ->
+            (* heal full and sleep *)
+            { target with ailment = "asleep"; cur_hp = target.cur_stats.hp }
+        | 39 ->
+            (* OHKO *)
+            target.cur_hp <- 0;
+            target
+        | 42 ->
+            (* deal flat 40 damage *)
+            let new_hp = target.cur_hp - 40 in
+            { target with cur_hp = max new_hp 0 }
+        | 51 ->
+            (* raise attack by 2 stages *)
+            let new_atk = min 6 (target.stat_stages.atk + 2) in
+            {
+              target with
+              stat_stages = { target.stat_stages with atk = new_atk };
+            }
+        | 52 ->
+            (* raise defense by 2 stages *)
+            let new_def = min 6 (target.stat_stages.def + 2) in
+            {
+              target with
+              stat_stages = { target.stat_stages with def = new_def };
+            }
+        | 53 ->
+            (* raise speed by 2 stages *)
+            let new_spd = min 6 (target.stat_stages.spd + 2) in
+            {
+              target with
+              stat_stages = { target.stat_stages with spd = new_spd };
+            }
+        | 55 ->
+            (* raise spdef by 2 stages *)
+            let new_spdef = min 6 (target.stat_stages.spdef + 2) in
+            {
+              target with
+              stat_stages = { target.stat_stages with spdef = new_spdef };
+            }
+        | 60 ->
+            (* lower enemy defense by 2 stages *)
+            if target.stat_stages.def >= -4 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with def = target.stat_stages.def - 2 };
+              }
+            else
+              { target with stat_stages = { target.stat_stages with def = -6 } }
+        | 61 ->
+            (* lower enemy speed *)
+            if target.stat_stages.spd >= -5 then
+              {
+                target with
+                stat_stages =
+                  { target.stat_stages with spd = target.stat_stages.spd - 1 };
+              }
+            else target
+        | 88 ->
+            (* deal damage equal to user's level *)
+            let new_hp = target.cur_hp - target.level in
+            { target with cur_hp = max new_hp 0 }
+        | 131 ->
+            (* deal 20 flat damage *)
+            let new_hp = target.cur_hp - 20 in
+            { target with cur_hp = max new_hp 0 }
+        | 199 ->
+            (* recoil *)
+            let new_hp = attacker.cur_hp - (attacker.cur_stats.hp / 10) in
+            attacker.cur_hp <- max 0 new_hp;
+            target
+        | 317 ->
+            (* raise spatk and spdef *)
+            let new_spatk = min (target.stat_stages.spatk + 2) 6 in
+            let new_spdef = min (target.stat_stages.spdef + 2) 6 in
+            {
+              target with
+              stat_stages =
+                { target.stat_stages with spatk = new_spatk; spdef = new_spdef };
+            }
+        | _ -> failwith "Unknown effect ID"
+      in
+      if move.target = Self then (target, defender) else (attacker, target)
+    else (attacker, defender)
+  in
+  if move.effect_chance = -1 then (a, d) else deal_damage a d move
+
+let attack (attacker : t) (defender : t) (move : move) : t * t =
+  let attacker_move = List.find (fun m -> m = move) attacker.moves in
+  if attacker_move.pp = 0 then (
+    print_endline "Out of pp!";
+    (attacker, defender))
+  else
+    let updated_pp_move = { move with pp = move.pp - 1 } in
+    let updated_moves =
+      List.map
+        (fun m -> if m.name = move.name then updated_pp_move else m)
+        attacker.moves
+    in
+    let updated_attacker = { attacker with moves = updated_moves } in
+
+    if move.effect_id = 1 then deal_damage updated_attacker defender move
+    else apply_effect updated_attacker defender move
 
 let apply_stat_change p stat_name num_stages =
   let new_stages =
