@@ -141,15 +141,16 @@ let get_multipliers_by_stat_stages stat_stages =
       (string_of_int ss) 1
     |> float_of_string
   in
-
-  ( multiplier_by_stat_stage stat_stages.hp,
-    multiplier_by_stat_stage stat_stages.atk,
-    multiplier_by_stat_stage stat_stages.def,
-    multiplier_by_stat_stage stat_stages.spatk,
-    multiplier_by_stat_stage stat_stages.spdef,
-    multiplier_by_stat_stage stat_stages.spd,
-    multiplier_by_stat_stage stat_stages.acc,
-    multiplier_by_stat_stage stat_stages.eva )
+  [
+    multiplier_by_stat_stage stat_stages.hp;
+    multiplier_by_stat_stage stat_stages.atk;
+    multiplier_by_stat_stage stat_stages.def;
+    multiplier_by_stat_stage stat_stages.spatk;
+    multiplier_by_stat_stage stat_stages.spdef;
+    multiplier_by_stat_stage stat_stages.spd;
+    multiplier_by_stat_stage stat_stages.acc;
+    multiplier_by_stat_stage stat_stages.eva;
+  ]
 
 let apply_multiplier stat multiplier =
   int_of_float (float_of_int stat *. multiplier)
@@ -178,7 +179,11 @@ let calc_current_stats base_stats nature level ailment (stat_stages : stats) =
       acc = 100;
       eva = 100;
     }
-    [ get_multipliers_by_nature nature; get_multipliers_by_ailment ailment ]
+    [
+      get_multipliers_by_nature nature;
+      get_multipliers_by_ailment ailment;
+      get_multipliers_by_stat_stages stat_stages;
+    ]
 
 let get_pokemon_id poke_name =
   let pokemon = Csv.load "lib/python/data/pokemon.csv" in
