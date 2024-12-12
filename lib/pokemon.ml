@@ -136,22 +136,12 @@ let get_multipliers_by_ailment a =
   with Failure _ -> [ 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0 ]
 
 let get_multipliers_by_stat_stages stat_stages =
-  let multiplier_by_stat_stage = function
-    | -6 -> 0.25
-    | -5 -> 2. /. 7.
-    | -4 -> 2. /. 6.
-    | -3 -> 0.4
-    | -2 -> 0.5
-    | -1 -> 2. /. 3.
-    | 0 -> 1.
-    | 1 -> 1.5
-    | 2 -> 2.
-    | 3 -> 2.5
-    | 4 -> 3.
-    | 5 -> 3.5
-    | 6 -> 4.
-    | _ -> failwith "Stat Multiplier out of range"
+  let multiplier_by_stat_stage ss =
+    search_csv_helper_one_match "data/multipliers_by_stat_stages" 0
+      (string_of_int ss) 1
+    |> float_of_string
   in
+
   ( multiplier_by_stat_stage stat_stages.hp,
     multiplier_by_stat_stage stat_stages.atk,
     multiplier_by_stat_stage stat_stages.def,
