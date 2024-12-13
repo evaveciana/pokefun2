@@ -3,7 +3,7 @@ open ANSITerminal
 open Tui
 
 let every_pokemon () =
-  let rows = Csv.load "lib/python/data/first_151_pokemon.csv" in
+  let rows = Csv.load "data/first_151_pokemon.csv" in
   List.map (fun row -> List.nth row 1) rows
 
 (* Type definitions *)
@@ -11,8 +11,8 @@ type team = t list
 
 (* Type for a team of Pokémon *)
 type decision =
-  | Attack of string
-  | Switch of string
+  | Attack
+  | Switch
   | Run
 
 (* Type for the decision that a player can make *)
@@ -51,55 +51,67 @@ let init_battle (team1 : team) (team2 : team) : battle_state =
       failwith "Both teams must have at least one Pokémon to start the battle."
 
 let create_random_team () : team =
-  let level = 50 in
-  let random_nature =
-    let natures_csv = Csv.load "data/multipliers_by_nature" in
-    let chosen_row =
-      List.nth natures_csv (Random.int (List.length natures_csv))
-    in
-    List.hd chosen_row
-  in
+  [
+    create "venusaur" 50 "hardy";
+    create "blastoise" 50 "hardy";
+    create "charizard" 50 "hardy";
+  ]
+(* print_endline "create random team started"; let level = 50 in let
+   random_nature = let natures_csv = Csv.load "data/multipliers_by_nature.csv"
+   in let chosen_row = List.nth natures_csv (Random.int (List.length
+   natures_csv)) in List.hd chosen_row in
 
-  let random_species =
-    let species_list = every_pokemon () in
-    List.nth species_list (Random.int (List.length species_list))
-  in
-  let random_moves species =
-    let moves = get_moves species in
-    let rec pick_moves n moves acc =
-      if n = 0 then acc
-      else
-        let move = List.nth moves (Random.int (List.length moves)) in
-        pick_moves (n - 1) moves (move :: acc)
-    in
-    pick_moves 4 moves []
-  in
+   let random_species = let species_list = every_pokemon () in print_endline
+   "start random species"; List.nth species_list (Random.int (List.length
+   species_list)) in
 
-  let create_random_pokemon species =
-    let level = level in
-    let nature = random_nature in
-    let pokemon = create species level nature in
-    let moves = random_moves species in
-    let updated_pokemon =
-      List.fold_left (fun p move -> add_pokemon_move p move.id) pokemon moves
-    in
-    updated_pokemon
-  in
+   let random_moves species = let moves = get_moves species in let rec
+   pick_moves n moves acc = if n = 0 then acc else let move = print_endline
+   "random moves started"; List.nth moves (Random.int (List.length moves)) in
+   pick_moves (n - 1) moves (create_move_from_name move :: acc) in pick_moves 4
+   moves [] in
 
-  let rec generate_team n acc =
-    if n = 6 then acc
-    else
-      let species = random_species in
-      let pokemon = create_random_pokemon species in
-      generate_team (n + 1) (pokemon :: acc)
-  in
-  generate_team 0 []
+   let create_random_pokemon species = let level = level in let nature =
+   random_nature in print_endline "before create"; let pokemon = create species
+   level nature in print_endline "before random_moves"; let moves = random_moves
+   species in let updated_pokemon = List.fold_left (fun p move ->
+   add_pokemon_move p move.id) pokemon moves in updated_pokemon in
 
-(*for now just generate random team, may change later*)
+   let rec generate_team n acc = if n = 6 then acc else let species =
+   random_species in let pokemon = create_random_pokemon species in
+   generate_team (n + 1) (pokemon :: acc) in print_endline "create random team
+   ended"; generate_team 0 [] *)
+
+(* TODO: for now just generate random team, may change later*)
 let create_ai_team () : team = create_random_team ()
 
+let view_team (curr_team : team) : unit =
+  if List.length curr_team = 0 then print_endline "Team is empty."
+  else (
+    print_endline "Viewing team:";
+    List.iteri
+      (fun i poke ->
+        let poke_str = pokemon_to_string poke in
+        print_endline (string_of_int (i + 1) ^ ". " ^ poke_str))
+      curr_team)
+
 (*in battle choosing a move*)
-let choose_move () : move = failwith "TODO"
+
+let lose () =
+  print_endline "You lose! You suck";
+  exit 0
+
+let win () =
+  print_endline "You win!";
+  exit 0
+
+let print_battle_status battle =
+  let player_poke, ai_poke = battle.current_pokemon in
+  print_endline
+    ("print_battle: player hp: "
+    ^ string_of_int (cur_hp player_poke)
+    ^ " opp hp: "
+    ^ string_of_int (cur_hp ai_poke))
 
 let rec attack_menu battle_state =
   let player_pokemon, _ = battle_state.current_pokemon in
@@ -107,7 +119,7 @@ let rec attack_menu battle_state =
   let moves = player_pokemon.moves in
 
   (* print out the list of moves *)
-  print_endline "Choose an attack (by\n   number):";
+  print_endline "Choose an attack (by number): \n";
   List.iteri
     (fun (i : int) (move : move) ->
       print_endline (string_of_int (i + 1) ^ ". " ^ move.name))
@@ -116,8 +128,7 @@ let rec attack_menu battle_state =
   match read_line () with
   | choice when int_of_string_opt choice <> None ->
       let index = int_of_string choice - 1 in
-      if index >= 0 && index < List.length moves then
-        Attack (List.nth moves index).name
+      if index >= 0 && index < List.length moves then List.nth moves index
       else (
         print_endline "Invalid choice. Try again.";
         attack_menu battle_state)
@@ -125,14 +136,75 @@ let rec attack_menu battle_state =
       print_endline "Invalid input. Try again.";
       attack_menu battle_state
 
-let rec switch_menu () = failwith "TODO"
+let check_status (battle : battle_state) =
+  print_endline "check_status";
+  let fainted_team1 = List.filter (fun p1 -> p1.cur_hp <= 0) battle.team1 in
+  let p1 = List.hd battle.team1 in
+  let p2 = List.hd battle.team2 in
+  let fainted_team2 = List.filter (fun p2 -> p2.cur_hp <= 0) battle.team2 in
+  print_endline
+    ("fainted team1 length: " ^ string_of_int (List.length fainted_team1));
+  print_endline ("Venusaur health:" ^ string_of_int (cur_hp p1));
+  print_endline
+    ("fainted team2 length: " ^ string_of_int (List.length fainted_team2));
+  print_endline ("Charizard health:" ^ string_of_int (cur_hp p2));
+  if List.length fainted_team1 = List.length battle.team1 then lose ()
+  else if List.length fainted_team2 = List.length battle.team2 then win ()
 
-let rec get_player_action () =
+let rec switch_menu (battle : battle_state) : t =
+  print_endline "Choose a Pokemon by id to switch to: ";
+
+  let current_team = battle.team1 in
+  view_team current_team;
+
+  let switch_to_id = int_of_string (read_line ()) in
+  let pokemon_to_switch_to = List.nth current_team (switch_to_id - 1) in
+  pokemon_to_switch_to
+
+(*for a pokemon on the team print out all the stats such as Pokemon name, its
+  tipe, and HP. Used after a player makes move*)
+let print_pokemon_stats pokemon =
+  print_endline ("Name: " ^ pokemon.species);
+  let types =
+    if pokemon.is_dual_type then fst pokemon.tipe ^ " / " ^ snd pokemon.tipe
+    else fst pokemon.tipe
+  in
+  print_endline ("Type: " ^ types);
+  print_endline ("Level: " ^ string_of_int pokemon.level);
+  print_endline
+    ("HP: "
+    ^ string_of_int pokemon.cur_hp
+    ^ "/"
+    ^ string_of_int (Pokemon.cur_hp pokemon))
+
+(*for a pokemon on the team print out all the stats such as Pokemon name, its
+  tipe, and HP, def, atk etc.*)
+let print_all_pokemon_stats pokemon : unit =
+  print_endline ("Name: " ^ pokemon.species);
+  let types =
+    if pokemon.is_dual_type then fst pokemon.tipe ^ " / " ^ snd pokemon.tipe
+    else fst pokemon.tipe
+  in
+  print_endline ("Type: " ^ types);
+  print_endline ("Level: " ^ string_of_int pokemon.level);
+  print_endline
+    ("HP: "
+    ^ string_of_int pokemon.cur_hp
+    ^ "/"
+    ^ string_of_int (Pokemon.cur_hp pokemon));
+  print_endline ("Attack: " ^ string_of_int (Pokemon.atk pokemon));
+  print_endline ("Defense: " ^ string_of_int (Pokemon.def pokemon));
+  print_endline ("Speed: " ^ string_of_int (Pokemon.spd pokemon));
+  print_endline ("Special Attack: " ^ string_of_int (Pokemon.spatk pokemon));
+  print_endline ("Special Defense: " ^ string_of_int (Pokemon.spdef pokemon));
+  print_endline ("Nature: " ^ pokemon.nature)
+
+let rec get_player_action () : decision =
   print_string []
     "Choose an action: \n1. Attack\n2. Switch\n3. UseItem\n4. Run\n";
   match read_line () with
-  | "1" | "Attack" | "attack" | "a" -> Attack ""
-  | "2" | "Switch" | "switch" | "s" -> Switch ""
+  | "1" | "Attack" | "attack" | "a" -> Attack
+  | "2" | "Switch" | "switch" | "s" -> Switch
   | "3" | "Run" | "run" | "r" -> Run
   | _ ->
       print_endline "Invalid action! Please try again.";
@@ -143,10 +215,15 @@ let get_ai_move (battle : battle_state) : move =
 
 let make_ai_move (battle : battle_state) (ai_move : move) : battle_state =
   let player_poke, ai_poke = battle.current_pokemon in
-  let player_poke, ai_poke =
+  let ai_poke, player_poke =
     print_endline (ai_poke.species ^ " used " ^ move_to_string ai_move ^ "!");
     attack ai_poke player_poke ai_move
   in
+  print_endline
+    ("ai_move: player hp: "
+    ^ string_of_int (cur_hp player_poke)
+    ^ " opp hp: "
+    ^ string_of_int (cur_hp ai_poke));
   {
     battle with
     current_pokemon = (player_poke, ai_poke);
@@ -159,38 +236,69 @@ let make_player_move battle player_poke ai_poke player_move =
       (player_poke.species ^ " used " ^ move_to_string player_move ^ "!");
     attack player_poke ai_poke player_move
   in
+  print_endline
+    ("player move: player hp: "
+    ^ string_of_int (cur_hp player_poke)
+    ^ " opp hp: "
+    ^ string_of_int (cur_hp ai_poke));
   {
     battle with
     current_pokemon = (player_poke, ai_poke);
     current_turn = battle.current_turn + 1;
   }
 
-let rec find_in_team pokemon (team : team) =
-  match team with
-  | [] -> failwith "TODO: not in team"
-  | h :: t -> if h.species = pokemon then h else find_in_team pokemon t
+(* let rec find_in_team pokemon (team : team) = match team with | [] -> failwith
+   "TODO: not in team" | h :: t -> if h.species = pokemon then h else
+   find_in_team pokemon t *)
 
-let make_player_switch battle pokemon_name =
-  let player_poke, ai_poke = battle.current_pokemon in
-  let player_poke = find_in_team pokemon_name battle.team1 in
-  { battle with current_pokemon = (player_poke, ai_poke) }
+let make_player_switch battle pokemon =
+  let _, ai_poke = battle.current_pokemon in
+  { battle with current_pokemon = (pokemon, ai_poke) }
 
-(* TODO: placeholder *)
+(* TODO: placehohlder *)
+let get_ai_switch battle =
+  let alive_pokemon = List.filter (fun p -> p.cur_hp > 0) battle.team2 in
+  List.hd alive_pokemon
+
 let check_deaths battle =
+  print_endline "check_deaths";
+  check_status battle;
   let player_poke, ai_poke = battle.current_pokemon in
-  let battle = if cur_hp player_poke <= 0 then battle else battle in
-  if cur_hp ai_poke <= 0 then battle else battle
+  print_endline
+    ("check deaths: player hp: "
+    ^ string_of_int (cur_hp player_poke)
+    ^ " opp hp: "
+    ^ string_of_int (cur_hp ai_poke));
+  let battle, switched =
+    if cur_hp player_poke <= 0 then
+      ({ battle with current_pokemon = (switch_menu battle, ai_poke) }, true)
+    else (battle, false)
+  in
+  if cur_hp ai_poke <= 0 then
+    let player_poke, _ = battle.current_pokemon in
+    ({ battle with current_pokemon = (player_poke, get_ai_switch battle) }, true)
+  else (battle, switched)
+
+let update_both_stats battle =
+  let player_poke, ai_poke = battle.current_pokemon in
+  {
+    battle with
+    current_pokemon =
+      (update_current_stats player_poke, update_current_stats ai_poke);
+  }
 
 let rec handle_action (action : decision) (ai_move : move)
     (battle : battle_state) : battle_state =
-  (* TODO: update current stats *)
+  print_endline "handle_action called!";
+  let battle = update_both_stats battle in
+  print_endline "update_both_stats called!";
   match action with
-  | Attack "" ->
-      let next_action = attack_menu battle in
-      handle_action next_action ai_move battle
-  | Attack move_name ->
+  | Attack ->
+      let player_move = attack_menu battle in
+
+      print_endline "Attack move_name called!";
       let player_poke, ai_poke = battle.current_pokemon in
-      let player_move = create_move_from_name move_name in
+      print_endline "created move from name";
       let player_goes_first =
         if player_move.priority < ai_move.priority then false
         else if player_move.priority > ai_move.priority then true
@@ -198,18 +306,33 @@ let rec handle_action (action : decision) (ai_move : move)
         else if spd player_poke > spd ai_poke then true
         else roll 50
       in
-      if player_goes_first then
-        make_player_move battle player_poke ai_poke player_move
-      else make_ai_move battle ai_move
-  | Switch "" ->
-      let next_action = switch_menu () in
-      handle_action next_action ai_move battle
-  | Switch pokemon_name ->
-      let battle = make_player_switch battle pokemon_name in
-      print_endline ("You switched to " ^ pokemon_name ^ "!");
-      make_ai_move
-        { battle with current_turn = battle.current_turn + 1 }
-        ai_move
+      print_endline "move order called!";
+      let new_battle =
+        if player_goes_first then (
+          let battle =
+            make_player_move battle player_poke ai_poke player_move
+          in
+          print_battle_status battle;
+          let battle, fainted = check_deaths battle in
+
+          if fainted then battle else make_ai_move battle ai_move)
+        else
+          let battle = make_ai_move battle ai_move in
+          let battle, fainted = check_deaths battle in
+          if fainted then battle
+          else make_player_move battle player_poke ai_poke player_move
+      in
+
+      fst (check_deaths new_battle)
+  | Switch ->
+      let switch = switch_menu battle in
+      if switch <> fst battle.current_pokemon then (
+        let battle = make_player_switch battle switch in
+        print_endline ("You switched to " ^ pokemon_to_string switch ^ "!");
+        make_ai_move
+          { battle with current_turn = battle.current_turn + 1 }
+          ai_move)
+      else handle_action (get_player_action ()) ai_move battle
   | Run ->
       print_endline "You ran away!";
       { battle with status = Team2Win }
@@ -225,6 +348,21 @@ let setup_fake () : battle_state =
       species = "venusaur";
       is_dual_type = true;
       tipe = ("Grass", "Poison");
+      base_stats = one_stats;
+      cur_stats = zero_stats;
+      stat_stages = zero_stats;
+      moves = [ example_move () ];
+      level = 50;
+      ailment = "healthy";
+      nature = "hardy";
+      cur_hp = 1;
+    }
+  in
+  let p2 =
+    {
+      species = "charizard";
+      is_dual_type = true;
+      tipe = ("Fire", "Flying");
       base_stats = zero_stats;
       cur_stats = zero_stats;
       stat_stages = zero_stats;
@@ -236,34 +374,25 @@ let setup_fake () : battle_state =
     }
   in
   let team1 = [ p1 ] in
-  let team2 = [ p1 ] in
+  let team2 = [ p2 ] in
   let battle_state = init_battle team1 team2 in
   battle_state
 
-let check_status (battle : battle_state) : battle_state =
-  let fainted_team1 = List.filter (fun p1 -> p1.cur_hp <= 0) battle.team1 in
-  let fainted_team2 = List.filter (fun p2 -> p2.cur_hp <= 0) battle.team2 in
-  if List.length fainted_team1 = List.length battle.team1 then
-    { battle with status = Team2Win }
-  else if List.length fainted_team2 = List.length battle.team2 then
-    { battle with status = Team1Win }
-  else battle
-
 let rec battle_loop (battle : battle_state) =
+  print_endline "battle_loop started";
   match battle.status with
   | PlayerTurn ->
       let player_decision = get_player_action () in
+      print_endline "got player_decision";
       let ai_decision = get_ai_move battle in
+      print_endline "got ai_decision";
+      print_endline "handling actions...";
       let new_state = handle_action player_decision ai_decision battle in
+      print_endline "handled action, returning new state";
+
       battle_loop new_state
-  | Team1Win ->
-      print_endline "You win! Congrats!";
-      Unix.sleepf 3.0;
-      exit 0
-  | Team2Win ->
-      print_endline "You lost! Sorry bro";
-      Unix.sleepf 3.0;
-      exit 0
+  | Team1Win -> win ()
+  | Team2Win -> lose ()
 
 (*HELPER FUNCTIONS FOR THE main_menu and pick_team FUNCTIONS !!! (for terminal
   UI)*)
@@ -389,8 +518,6 @@ let rec search_for_pokemon (curr_team : team) all_pokemon : team =
   in
   loop ""
 
-let view_team (curr_team : team) : unit = failwith "TODO"
-
 let rec show_menu (curr_team : team) all_pokemon : team =
   clear_screen ();
   print_endline "Pokemon Selection Menu:";
@@ -405,6 +532,8 @@ let rec show_menu (curr_team : team) all_pokemon : team =
       show_menu updated_team all_pokemon
   | "2" | "View" | "view" | "v" ->
       view_team curr_team;
+      print_endline "Press Enter to continue...";
+      ignore (read_line ());
       show_menu curr_team all_pokemon
   | "3" | "Confirm" | "confirm" | "c" ->
       if List.length curr_team >= 1 then (
@@ -431,8 +560,11 @@ let rec main_menu () =
   | "1" | "Play" | "play" | "p" ->
       print_endline "Starting the game...";
       let team1 = pick_team all_pokemon in
+      print_endline "pick_team finished";
       let team2 = create_random_team () in
+      print_endline "create_random_team finished";
       let battle_state = init_battle team1 team2 in
+      print_endline "init_battle finished";
       battle_loop battle_state
   | "2" | "Exit" | "exit" | "e" -> exit 0
   | _ -> main_menu ()

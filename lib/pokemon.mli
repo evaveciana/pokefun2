@@ -59,6 +59,9 @@ exception BadPokemon
 val zero_stats : stats
 (** [zero_stats] is a collection of stats with every stat initialized to zero. *)
 
+val one_stats : stats
+(** [one_stats] is a collection of stats with every stat initialized to zero. *)
+
 (* val species : t -> string *)
 (** [species p] is the species of pokemon [p] *)
 
@@ -90,22 +93,22 @@ val cur_stats : t -> stats
 val cur_hp : t -> int
 (** [cur_hp p] is the current HP of pokemon [p], including changes from damage. *)
 
-(* val max_hp : t -> int *)
+val max_hp : t -> int
 (** [max_hp p] is the max HP of pokemon [p] *)
 
-(* val atk : t -> int *)
+val atk : t -> int
 (** [atk p] is the current Attack of pokemon [p], including changes from stat
     stages. *)
 
-(* val spatk : t -> int *)
+val spatk : t -> int
 (** [spatk p] is the current Special Attack of pokemon [p], including changes
     from stat stages. *)
 
-(* val def : t -> int *)
+val def : t -> int
 (** [def p] is the current Defense of pokemon [p], including changes from stat
     stages. *)
 
-(* val spdef : t -> int *)
+val spdef : t -> int
 (** [spdef p] is the current Special Defense of pokemon [p], including changes
     from stat stages. *)
 
@@ -120,11 +123,9 @@ val attack : t -> t -> move -> t * t
 (** [attack attacker defender move] Causes pokemon [attacker] to use [move] on
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
-val calc_current_stats : stats -> string -> int -> string -> stats -> stats
-(** [calc_current_stats base_stats nature level ailment stat_stages] returns the
-    current stats of a pokemon with base stats [base_stats], nature [nature],
-    level [level], ailment [ailment], with stat stages [stat_stages] Should be
-    called when initializing a pokemon, healing, or leveling up *)
+val update_current_stats : t -> t
+(** [update_current_stats p] updates the current stats of a pokemon with its
+    current status *)
 
 val stats_to_list : stats -> int list
 (** [stats_to_list stats] is a list representation of [stats]. *)
@@ -152,7 +153,7 @@ val example_move : unit -> move
 val move_ids : move list -> int list
 (** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
 
-val get_moves : string -> move list
+val get_moves : string -> string list
 (** [get_moves str] is the list of moves associated with a Pokemon of species
     [str]. *)
 

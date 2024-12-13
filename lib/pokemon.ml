@@ -71,6 +71,9 @@ exception BadPokemon
 let zero_stats =
   { hp = 0; atk = 0; def = 0; spatk = 0; spdef = 0; spd = 0; acc = 0; eva = 0 }
 
+let one_stats =
+  { hp = 1; atk = 1; def = 1; spatk = 1; spdef = 1; spd = 1; acc = 0; eva = 0 }
+
 (* let species p = p.species let base_stats p = p.base_stats*)
 let cur_stats p = p.cur_stats
 
@@ -82,9 +85,15 @@ let cur_stats p = p.cur_stats
    p.cur_stats.hp let max_hp p = 0 (* TODO*) let atk p = p.cur_stats.atk let def
    p = p.cur_stats.def let spatk p = p.cur_stats.spatk let spdef p =
    p.cur_stats.spdef let spd p = p.cur_stats.spd*)
+let atk p = p.cur_stats.atk
+let def p = p.cur_stats.def
+let spatk p = p.cur_stats.spatk
+let spdef p = p.cur_stats.spdef
+let spd p = p.cur_stats.spd
+let max_hp p = p.cur_stats.hp
 let moves p = p.moves
 let spd p = p.cur_stats.spd
-let cur_hp p = p.cur_stats.hp
+let cur_hp p = p.cur_hp
 
 let stats_to_list stats =
   [
@@ -125,21 +134,21 @@ let search_csv_helper_whole_row filename match_col key start_col =
 
 let get_multipliers_by_nature n =
   let multipliers =
-    search_csv_helper_whole_row "../data/multipliers_by_nature" 0 n 1
+    search_csv_helper_whole_row "data/multipliers_by_nature.csv" 0 n 1
   in
   List.map float_of_string multipliers
 
 let get_multipliers_by_ailment a =
   try
     let multipliers =
-      search_csv_helper_whole_row "../data/multipliers_by_ailment" 0 a 1
+      search_csv_helper_whole_row "data/multipliers_by_ailment.csv" 0 a 1
     in
     List.map float_of_string multipliers
   with Failure _ -> [ 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0; 1.0 ]
 
 let get_multipliers_by_stat_stages stat_stages =
   let multiplier_by_stat_stage ss =
-    search_csv_helper_one_match "../data/multipliers_by_stat_stages" 0
+    search_csv_helper_one_match "data/multipliers_by_stat_stages.csv" 0
       (string_of_int ss) 1
     |> float_of_string
   in
@@ -158,7 +167,7 @@ let rec apply_multipliers_list cur_stats multipliers =
   | h :: t -> apply_multipliers_list (apply_multipliers cur_stats h) t
 
 let calc_current_stats base_stats nature level ailment stat_stages =
-  let stat_aux base_stat level = ((2 * base_stat) + 31 + 21) * level / 100 in
+  let stat_aux base_stat level = ((2 * base_stat) + 52) * level / 100 in
   apply_multipliers_list
     {
       hp = stat_aux base_stats.hp level + level + 10;
@@ -176,22 +185,26 @@ let calc_current_stats base_stats nature level ailment stat_stages =
       get_multipliers_by_stat_stages stat_stages;
     ]
 
+let calc_cur_stats p =
+  calc_current_stats p.base_stats p.nature p.level p.ailment p.stat_stages
+
+let update_current_stats p = { p with cur_stats = calc_cur_stats p }
+
 let get_pokemon_id poke_name =
-  search_csv_helper_one_match "../data/pokemon.csv" 1 poke_name 0
-  |> int_of_string
+  search_csv_helper_one_match "data/pokemon.csv" 1 poke_name 0 |> int_of_string
 
 let get_move_ids pokemon_id =
   let strlst =
-    search_csv_helper_many_matches "../data/pokemon_moves.csv" 0
+    search_csv_helper_many_matches "data/pokemon_moves.csv" 0
       (string_of_int pokemon_id) 2
   in
   List.map int_of_string strlst
 
 let get_type_name type_id =
-  search_csv_helper_one_match "../data/types.csv" 0 (string_of_int type_id) 1
+  search_csv_helper_one_match "data/types.csv" 0 (string_of_int type_id) 1
 
 let get_move_id_from_name move_name =
-  let id = search_csv_helper_one_match "../data/moves.csv" 1 move_name 0 in
+  let id = search_csv_helper_one_match "data/moves.csv" 1 move_name 0 in
   int_of_string id
 
 (* let tipe_to_string = function | Normal -> "Normal" | Fighting -> "Fighting" |
@@ -238,7 +251,7 @@ let pokemon_to_string pokemon =
   pokemon.species ^ ": " ^ moves
 
 let create_move_from_name move_name =
-  match search_csv_helper_whole_row "../data/moves.csv" 1 move_name 0 with
+  match search_csv_helper_whole_row "data/moves.csv" 1 move_name 0 with
   | [
    id;
    identifier;
@@ -252,9 +265,6 @@ let create_move_from_name move_name =
    damage_class_id;
    effect_id;
    effect_chance;
-   _;
-   _;
-   _;
   ] ->
       {
         id = int_of_string id;
@@ -274,13 +284,25 @@ let create_move_from_name move_name =
       }
   | _ -> failwith "Invalid move ID"
 
+let get_moves pokemon_species =
+  let poke_id = get_pokemon_id pokemon_species in
+  let move_ids = get_move_ids poke_id in
+  let rec find_identifier move_id =
+    match
+      search_csv_helper_whole_row "data/moves.csv" 0 (string_of_int move_id) 0
+    with
+    | [ _; (* Skip id *)
+           identifier; _; _; _; _; _; _; _; _; _; _ ] -> identifier
+    | _ -> "Unknown move"
+  in
+  List.map find_identifier move_ids
+
 let display_learnable_moves pokemon_species =
   let poke_id = get_pokemon_id pokemon_species in
   let move_ids = get_move_ids poke_id in
   let rec find_details move_id =
     match
-      search_csv_helper_whole_row "../data/moves.csv" 0 (string_of_int move_id)
-        0
+      search_csv_helper_whole_row "data/moves.csv" 0 (string_of_int move_id) 0
     with
     | [
      id;
@@ -295,9 +317,6 @@ let display_learnable_moves pokemon_species =
      damage_class_id;
      effect_id;
      effect_chance;
-     _;
-     _;
-     _;
     ] ->
         let move_type = get_type_name (int_of_string type_id) in
         let damage_class =
@@ -316,18 +335,8 @@ let display_learnable_moves pokemon_species =
       print_endline ("- " ^ move_details))
     move_ids
 
-type p_info = {
-  tipe : string * string;
-  stats : stats;
-  moves : move list;
-  possible_abilities : string list;
-}
-
-let get_info_from_species (species : string) : p_info = failwith "TODO"
-let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
-
 let create name lvl nat =
-  let pokemon_tipes = Csv.load "../data/pokemon_types.csv" in
+  let pokemon_tipes = Csv.load "data/pokemon_types.csv" in
   let pokemon_id = get_pokemon_id name in
 
   let filter_by_int data id =
@@ -342,20 +351,19 @@ let create name lvl nat =
   let tipe =
     let tipes = filter_by_int pokemon_tipes pokemon_id in
     let match_tipe tipe_id =
-      search_csv_helper_one_match "../data/types.csv" 0 (string_of_int tipe_id)
-        1
+      search_csv_helper_one_match "data/types.csv" 0 (string_of_int tipe_id) 1
     in
 
     let first_tipe = match_tipe (int_of_string (List.nth (List.hd tipes) 1)) in
     if List.length tipes = 1 then (first_tipe, "NoneType")
     else
       let second_tipe =
-        match_tipe (int_of_string (List.nth (List.nth tipes 2) 1))
+        match_tipe (int_of_string (List.nth (List.nth tipes 1) 1))
       in
       (first_tipe, second_tipe)
   in
 
-  let pokemon_stats = Csv.load "../data/pokemon_stats.csv" in
+  let pokemon_stats = Csv.load "data/pokemon_stats.csv" in
 
   let stat_list = filter_by_int pokemon_stats pokemon_id in
   let base_stats =
@@ -373,7 +381,8 @@ let create name lvl nat =
   let cur_stats = calc_current_stats base_stats nat lvl "healthy" zero_stats in
   (*Raises BadPokemon if not a valid species*)
   try
-    ignore (search_csv_helper_one_match "../data/multipliers_by_nature" 0 nat 0);
+    ignore
+      (search_csv_helper_one_match "data/multipliers_by_nature.csv" 0 nat 0);
     if lvl < 1 || lvl > 100 then raise BadPokemon
     else
       let is_dual_type = if snd tipe = "NoneType" then false else true in
@@ -777,7 +786,16 @@ let attack (attacker : t) (defender : t) (move : move) : t * t =
     in
     let updated_attacker = { attacker with moves = updated_moves } in
 
-    if move.effect_id = 1 then deal_damage updated_attacker defender move
+    if move.effect_id = 1 then (
+      let old_health = defender.cur_hp in
+      let new_attacker, new_defender =
+        deal_damage updated_attacker defender move
+      in
+      let new_health = new_defender.cur_hp in
+      let dmg_dealt = old_health - new_health in
+      print_endline ("Dealt " ^ string_of_int dmg_dealt ^ " damage.");
+      print_endline ("Opponent health: " ^ string_of_int new_health);
+      (new_attacker, new_defender))
     else apply_effect updated_attacker defender move
 
 let apply_stat_change p stat_name num_stages =
@@ -852,6 +870,6 @@ let add_pokemon_move (pokemon : t) (new_move_id : int) : t =
   in
   if List.length pokemon.moves >= 4 then
     raise (Failure "A Pokémon can only have up to 4 moves.")
-  else if List.mem new_move (get_info_from_species pokemon.species).moves then
+  else if List.mem new_move pokemon.moves then
     { pokemon with moves = pokemon.moves @ [ new_move ] }
   else raise (Failure "This move is not permitted by this species")

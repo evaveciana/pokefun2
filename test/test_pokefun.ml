@@ -42,7 +42,8 @@ let other_pokemon_tests =
     ( "Attack" >:: fun _ ->
       assert_equal
         (dual_pokemon, dual_pokemon)
-        (attack dual_pokemon dual_pokemon (List.hd (get_moves "Bulbasaur"))) );
+        (attack dual_pokemon dual_pokemon
+           (create_move_from_name (List.hd (get_moves "Bulbasaur")))) );
     ( "Apply stat change" >:: fun _ ->
       assert_equal
         [ 12; 6; 6; 6; 6; 6; 6; 6 ]
