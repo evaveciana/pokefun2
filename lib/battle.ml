@@ -26,13 +26,15 @@ type battle_state = {
 
 and battle_status =
   | PlayerTurn
-  | AITurn
   | Team1Win
   | Team2Win
 
 (* Type for the current state of the battle *)
 
 (* Functions *)
+
+let () = Random.self_init ()
+let roll chance = Random.int 100 < chance
 
 let init_battle (team1 : team) (team2 : team) : battle_state =
   match (team1, team2) with
@@ -134,52 +136,81 @@ let rec get_player_action () =
       print_endline "Invalid action! Please try again.";
       get_player_action ()
 
-let rec handle_player_action (action : decision) (battle : battle_state) :
-    battle_state =
+let get_ai_move (battle : battle_state) : move =
+  example_move () (* TODO: Placeholder implementation *)
+
+let make_ai_move (battle : battle_state) (ai_move : move) : battle_state =
+  let player_poke, ai_poke = battle.current_pokemon in
+  let player_poke, ai_poke =
+    print_endline (ai_poke.species ^ " used " ^ move_to_string ai_move ^ "!");
+    attack ai_poke player_poke ai_move
+  in
+  {
+    battle with
+    current_pokemon = (player_poke, ai_poke);
+    current_turn = battle.current_turn + 1;
+  }
+
+let make_player_move battle player_poke ai_poke player_move =
+  let player_poke, ai_poke =
+    print_endline
+      (player_poke.species ^ " used " ^ move_to_string player_move ^ "!");
+    attack player_poke ai_poke player_move
+  in
+  {
+    battle with
+    current_pokemon = (player_poke, ai_poke);
+    current_turn = battle.current_turn + 1;
+  }
+
+let rec find_in_team pokemon (team : team) =
+  match team with
+  | [] -> failwith "TODO: not in team"
+  | h :: t -> if h.species = pokemon then h else find_in_team pokemon t
+
+let make_player_switch battle pokemon_name =
+  let player_poke, ai_poke = battle.current_pokemon in
+  let player_poke = find_in_team pokemon_name battle.team1 in
+  { battle with current_pokemon = (player_poke, ai_poke) }
+
+(* TODO: placeholder *)
+let check_deaths battle =
+  let player_poke, ai_poke = battle.current_pokemon in
+  let battle = if cur_hp player_poke <= 0 then battle else battle in
+  if cur_hp ai_poke <= 0 then battle else battle
+
+let rec handle_action (action : decision) (ai_move : move)
+    (battle : battle_state) : battle_state =
+  (* TODO: update current stats *)
   match action with
-  (* placeholder to just return a decision *)
   | Attack "" ->
       let next_action = attack_menu battle in
-      handle_player_action next_action battle
+      handle_action next_action ai_move battle
   | Attack move_name ->
-      if battle.status = PlayerTurn then (
-        let attacker, defender = battle.current_pokemon in
-        print_endline (attacker.species ^ " used " ^ move_name ^ "!");
-
-        let new_attacker, new_defender =
-          attack attacker defender (create_move_from_name move_name)
-        in
-        {
-          battle with
-          current_pokemon = (new_attacker, new_defender);
-          status = AITurn;
-          current_turn = battle.current_turn + 1;
-        })
-      else
-        (* switch for handling ai move *)
-        let defender, attacker = battle.current_pokemon in
-        print_endline (attacker.species ^ " used " ^ move_name ^ "!");
-        let new_attacker, new_defender =
-          attack attacker defender (create_move_from_name move_name)
-        in
-        {
-          battle with
-          current_pokemon = (new_defender, new_attacker);
-          status = PlayerTurn;
-          current_turn = battle.current_turn + 1;
-        }
+      let player_poke, ai_poke = battle.current_pokemon in
+      let player_move = create_move_from_name move_name in
+      let player_goes_first =
+        if player_move.priority < ai_move.priority then false
+        else if player_move.priority > ai_move.priority then true
+        else if spd player_poke < spd ai_poke then false
+        else if spd player_poke > spd ai_poke then true
+        else roll 50
+      in
+      if player_goes_first then
+        make_player_move battle player_poke ai_poke player_move
+      else make_ai_move battle ai_move
   | Switch "" ->
       let next_action = switch_menu () in
-      handle_player_action next_action battle
+      handle_action next_action ai_move battle
   | Switch pokemon_name ->
+      let battle = make_player_switch battle pokemon_name in
       print_endline ("You switched to " ^ pokemon_name ^ "!");
-      { battle with status = AITurn; current_turn = battle.current_turn + 1 }
+      make_ai_move
+        { battle with current_turn = battle.current_turn + 1 }
+        ai_move
   | Run ->
       print_endline "You ran away!";
       { battle with status = Team2Win }
-
-let make_ai_action (battle : battle_state) : decision =
-  Run (* Placeholder implementation *)
 
 let handle_player_decision (decision : decision) (battle : battle_state) :
     battle_state =
@@ -219,12 +250,9 @@ let check_status (battle : battle_state) : battle_state =
 let rec battle_loop (battle : battle_state) =
   match battle.status with
   | PlayerTurn ->
-      let decision = get_player_action () in
-      let new_state = handle_player_action decision battle in
-      battle_loop new_state
-  | AITurn ->
-      let ai_decision = make_ai_action battle in
-      let new_state = handle_player_decision ai_decision battle in
+      let player_decision = get_player_action () in
+      let ai_decision = get_ai_move battle in
+      let new_state = handle_action player_decision ai_decision battle in
       battle_loop new_state
   | Team1Win ->
       print_endline "You win! Congrats!";
