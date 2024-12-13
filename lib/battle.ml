@@ -8,6 +8,7 @@ let every_pokemon =
 
 (* Type definitions *)
 type team = t list
+type t = Pokemon.t
 
 (* Type for a team of Pokémon *)
 type decision =
@@ -61,6 +62,16 @@ let rec add_moves p moves =
   match moves with
   | [] -> p
   | h :: t -> add_pokemon_move (add_moves p t) h
+
+let create_fake_team_ai () : team =
+  [
+    add_moves
+      (create "lapras" 55 "naughty")
+      [ "ice-beam"; "thunderbolt"; "psychic"; "confuse-ray" ];
+    add_moves
+      (create "mewtwo" 55 "mild")
+      [ "psychic"; "recover"; "barrier"; "swift" ];
+  ]
 
 let create_player_teams () : team =
   let team1 =
@@ -173,14 +184,6 @@ let lose () =
 let win () =
   print_endline "You win!";
   exit 0
-
-let print_battle_status battle =
-  let player_poke, ai_poke = battle.current_pokemon in
-  print_endline
-    ("print_battle: player hp: "
-    ^ string_of_int (cur_hp player_poke)
-    ^ " opp hp: "
-    ^ string_of_int (cur_hp ai_poke))
 
 let rec attack_menu battle_state =
   let player_pokemon, ai_pokemon = battle_state.current_pokemon in
@@ -347,6 +350,7 @@ let make_player_switch battle pokemon =
 let get_ai_switch battle =
   let alive_pokemon = List.filter (fun p -> p.cur_hp > 0) battle.team2 in
   let p = List.hd alive_pokemon in
+
   print_endline ("Opponent sent out " ^ p.species ^ "!");
   p
 
@@ -377,7 +381,7 @@ let check_status (battle : battle_state) =
 
 let check_deaths battle =
   (* print_endline "check_deaths"; *)
-  check_status battle;
+  check_status (update_team battle);
   let player_poke, ai_poke = battle.current_pokemon in
   (* print_endline ("check deaths: player hp: " ^ string_of_int (cur_hp
      player_poke) ^ " opp hp: " ^ string_of_int (cur_hp ai_poke)); *)
@@ -447,9 +451,12 @@ let rec handle_action (action : decision) (ai_move : move)
         if switch <> fst battle.current_pokemon then (
           let battle = make_player_switch battle switch in
           print_endline ("You switched to " ^ switch.species ^ "!");
-          make_ai_move
-            { battle with current_turn = battle.current_turn + 1 }
-            ai_move)
+          let battle =
+            make_ai_move
+              { battle with current_turn = battle.current_turn + 1 }
+              ai_move
+          in
+          fst (check_deaths (update_team battle)))
         else handle_action (get_player_action ()) ai_move battle
     | Run ->
         print_endline "You ran away!";
@@ -463,32 +470,18 @@ let handle_player_decision (decision : decision) (battle : battle_state) :
 
 (* JUST FOR implementation! initializes teams for displaying menu *)
 let setup_fake () : battle_state =
-  (* let p1 = { species = "venusaur"; is_dual_type = true; tipe = ("Grass",
-     "Poison"); base_stats = zero_stats; cur_stats = zero_stats; stat_stages =
-     zero_stats; moves = [ example_move () ]; level = 50; ailment = "healthy";
-     nature = "hardy"; cur_hp = 1; } in let p2 = { species = "charizard";
-     is_dual_type = true; tipe = ("Fire", "Flying"); base_stats = one_stats;
-     cur_stats = zero_stats; stat_stages = zero_stats; moves = [ example_move ()
-     ]; level = 50; ailment = "healthy"; nature = "hardy"; cur_hp = 1; } in *)
-  let team1 = create_player_teams () in
-  let team2 = create_ai_team () in
+  let team1 = create_ai_team () in
+  let team2 = create_fake_team_ai () in
   let battle_state = init_battle team1 team2 in
   battle_state
 
 let rec battle_loop (battle : battle_state) =
-  (* print_endline "battle_loop started"; *)
   match battle.status with
   | PlayerTurn ->
       let player_decision = get_player_action () in
-      (* print_endline "got player_decision"; *)
       let ai_decision = get_ai_move battle in
-      (* print_endline "got ai_decision"; print_endline "handling
-
-         actions..."; *)
       let new_state = handle_action player_decision ai_decision battle in
 
-      (* print_endline "handled action, returning new state"; *)
-      (* print_endline "handled action, returning new state"; *)
       battle_loop new_state
   | Team1Win -> win ()
   | Team2Win -> lose ()
