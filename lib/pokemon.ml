@@ -137,36 +137,25 @@ let get_multipliers_by_ailment a =
 
 let get_multipliers_by_stat_stages stat_stages =
   let multiplier_by_stat_stage ss =
-    search_csv_helper_one_match "data/multipliers_by_stat_stages" 0
+    search_csv_helper_one_match "../data/multipliers_by_stat_stages" 0
       (string_of_int ss) 1
     |> float_of_string
   in
-  [
-    multiplier_by_stat_stage stat_stages.hp;
-    multiplier_by_stat_stage stat_stages.atk;
-    multiplier_by_stat_stage stat_stages.def;
-    multiplier_by_stat_stage stat_stages.spatk;
-    multiplier_by_stat_stage stat_stages.spdef;
-    multiplier_by_stat_stage stat_stages.spd;
-    multiplier_by_stat_stage stat_stages.acc;
-    multiplier_by_stat_stage stat_stages.eva;
-  ]
-
-let apply_multiplier stat multiplier =
-  int_of_float (float_of_int stat *. multiplier)
-
-let apply_multipliers cur_stats mult_list =
-  let applied =
-    List.map2 apply_multiplier (stats_to_list cur_stats) mult_list
-  in
-  list_to_stats applied
+  List.map multiplier_by_stat_stage (stats_to_list stat_stages)
 
 let rec apply_multipliers_list cur_stats multipliers =
+  let apply_multipliers cur_stats mult_list =
+    let apply_multiplier stat multiplier =
+      int_of_float (float_of_int stat *. multiplier)
+    in
+    List.map2 apply_multiplier (stats_to_list cur_stats) mult_list
+    |> list_to_stats
+  in
   match multipliers with
   | [] -> cur_stats
   | h :: t -> apply_multipliers_list (apply_multipliers cur_stats h) t
 
-let calc_current_stats base_stats nature level ailment (stat_stages : stats) =
+let calc_current_stats base_stats nature level ailment stat_stages =
   let stat_aux base_stat level = ((2 * base_stat) + 31 + 21) * level / 100 in
   apply_multipliers_list
     {
@@ -186,34 +175,18 @@ let calc_current_stats base_stats nature level ailment (stat_stages : stats) =
     ]
 
 let get_pokemon_id poke_name =
-  let pokemon = Csv.load "lib/python/data/pokemon.csv" in
-
-  (* Find the Pokémon ID based on the given name *)
-  match List.find_opt (fun row -> List.nth row 1 = poke_name) pokemon with
-  | Some row ->
-      int_of_string (List.hd row) (* Assuming the ID is in the first column *)
-  | None -> failwith "Not valid pokemon"
+  search_csv_helper_one_match "../data/pokemon.csv" 1 poke_name 0
+  |> int_of_string
 
 let get_move_ids pokemon_id =
-  let (pokemon_moves : string list list) =
-    Csv.load "lib/python/data/pokemon_moves.csv"
+  let strlst =
+    search_csv_helper_many_matches "../data/pokemon_moves.csv" 0
+      (string_of_int pokemon_id) 2
   in
-
-  List.fold_left
-    (fun acc elt ->
-      if List.hd elt = string_of_int pokemon_id then
-        int_of_string (List.nth elt 2) :: acc
-      else acc)
-    [] pokemon_moves
+  List.map int_of_string strlst
 
 let get_type_name type_id =
-  let types = Csv.load "lib/python/data/types.csv" in
-
-  match
-    List.find_opt (fun row -> List.hd row = string_of_int type_id) types
-  with
-  | Some [ _; name; _; _ ] -> name
-  | _ -> "Unknown"
+  search_csv_helper_one_match "../data/types.csv" 0 (string_of_int type_id) 1
 
 let get_move_id_from_name move_name =
   let id = search_csv_helper_one_match "../data/moves.csv" 1 move_name 0 in
@@ -233,11 +206,18 @@ let get_move_id_from_name move_name =
    Psychic | "Ice" -> Ice | "Dragon" -> Dragon | "Dark" -> Dark | "Fairy" ->
    Fairy | "NoneType" -> NoneType | _ -> failwith "Invalid tipe" *)
 
-let damage_class_to_string (damage_class : damage_class) : string =
+let damage_class_to_string damage_class =
   match damage_class with
   | Physical -> "Physical"
   | Special -> "Special"
   | Status -> "Status"
+
+let damage_class_from_int i =
+  match i with
+  | 1 -> Status
+  | 2 -> Physical
+  | 3 -> Special
+  | _ -> failwith "Unknown"
 
 let move_to_string move =
   move.name ^ " (Type: " ^ move.tipe ^ ", Power: " ^ string_of_int move.power
@@ -283,14 +263,10 @@ let create_move_from_name move_name =
         accuracy = int_of_string accuracy;
         priority = int_of_string priority;
         target =
-          (if int_of_string target_id = 10 then Enemy
-           else if int_of_string target_id = 11 then Self
+          (if target_id = "10" then Enemy
+           else if target_id = "11" then Self
            else failwith "Not 10 or 11");
-        damage_class =
-          (if int_of_string damage_class_id = 1 then Status
-           else if int_of_string damage_class_id = 2 then Physical
-           else if int_of_string damage_class_id = 3 then Special
-           else failwith "Not 1, 2, or 3");
+        damage_class = damage_class_from_int (int_of_string damage_class_id);
         effect_id = int_of_string effect_id;
         effect_chance = int_of_string effect_chance;
       }
@@ -299,41 +275,36 @@ let create_move_from_name move_name =
 let display_learnable_moves pokemon_species =
   let poke_id = get_pokemon_id pokemon_species in
   let move_ids = get_move_ids poke_id in
-  let moves = Csv.load "lib/python/data/moves.csv" in
-
   let rec find_details move_id =
     match
-      List.find_opt (fun row -> List.hd row = string_of_int move_id) moves
+      search_csv_helper_whole_row "../data/moves.csv" 0 (string_of_int move_id)
+        0
     with
-    | Some
-        [
-          id;
-          identifier;
-          _;
-          type_id;
-          power;
-          pp;
-          accuracy;
-          priority;
-          target_id;
-          damage_class_id;
-          effect_id;
-          effect_chance;
-          _;
-          _;
-          _;
-        ] ->
+    | [
+     id;
+     identifier;
+     _;
+     type_id;
+     power;
+     pp;
+     accuracy;
+     priority;
+     target_id;
+     damage_class_id;
+     effect_id;
+     effect_chance;
+     _;
+     _;
+     _;
+    ] ->
         let move_type = get_type_name (int_of_string type_id) in
         let damage_class =
-          match int_of_string damage_class_id with
-          | 1 -> "Status"
-          | 2 -> "Physical"
-          | 3 -> "Special"
-          | _ -> "Unknown"
+          damage_class_from_int (int_of_string damage_class_id)
         in
         Printf.sprintf
           "%s (Type: %s, Power: %s, PP: %s, Accuracy: %s, Damage Class: %s)"
-          identifier move_type power pp accuracy damage_class
+          identifier move_type power pp accuracy
+          (damage_class_to_string damage_class)
     | _ -> "Unknown move"
   in
   print_endline ("Learnable moves for " ^ pokemon_species ^ ":");
@@ -342,48 +313,6 @@ let display_learnable_moves pokemon_species =
       let move_details = find_details move_id in
       print_endline ("- " ^ move_details))
     move_ids
-
-let vine_whip =
-  {
-    id = 22;
-    name = "Vine Whip";
-    tipe = "Grass";
-    power = 45;
-    pp = 25;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 1;
-    effect_chance = 0;
-  }
-
-let poison_powder =
-  {
-    id = 77;
-    name = "Poison Powder";
-    tipe = "Poison";
-    power = 0;
-    pp = 35;
-    accuracy = 75;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 67;
-    effect_chance = 0;
-  }
-
-let move_identifiers = [ (22, vine_whip); (77, poison_powder) ]
-let example_move () = vine_whip
-
-let move_ids lst =
-  let rec get_move_ids lst = function
-    | [] -> []
-    | h :: t ->
-        if List.mem (snd h) lst then fst h :: get_move_ids lst t
-        else get_move_ids lst t
-  in
-  get_move_ids lst move_identifiers
 
 type p_info = {
   tipe : string * string;
@@ -396,7 +325,7 @@ let get_info_from_species (species : string) : p_info = failwith "TODO"
 let get_moves str = (get_info_from_species (String.lowercase_ascii str)).moves
 
 let create name lvl nat =
-  let pokemon_tipes = Csv.load "lib/python/data/pokemon_types.csv" in
+  let pokemon_tipes = Csv.load "../data/pokemon_types.csv" in
   let pokemon_id = get_pokemon_id name in
 
   let filter_by_int data id =
@@ -410,9 +339,9 @@ let create name lvl nat =
 
   let tipe =
     let tipes = filter_by_int pokemon_tipes pokemon_id in
-
     let match_tipe tipe_id =
-      search_csv_helper_one_match "data/types.csv" 0 (string_of_int tipe_id) 1
+      search_csv_helper_one_match "../data/types.csv" 0 (string_of_int tipe_id)
+        1
     in
 
     let first_tipe = match_tipe (int_of_string (List.nth (List.hd tipes) 1)) in
@@ -424,7 +353,7 @@ let create name lvl nat =
       (first_tipe, second_tipe)
   in
 
-  let pokemon_stats = Csv.load "lib/python/data/pokemon_stats.csv" in
+  let pokemon_stats = Csv.load "../data/pokemon_stats.csv" in
 
   let stat_list = filter_by_int pokemon_stats pokemon_id in
   let base_stats =
@@ -442,7 +371,7 @@ let create name lvl nat =
   let cur_stats = calc_current_stats base_stats nat lvl "healthy" zero_stats in
   (*Raises BadPokemon if not a valid species*)
   try
-    ignore (search_csv_helper_one_match "data/multipliers_by_nature" 0 nat 0);
+    ignore (search_csv_helper_one_match "../data/multipliers_by_nature" 0 nat 0);
     if lvl < 1 || lvl > 100 then raise BadPokemon
     else
       let is_dual_type = if snd tipe = "NoneType" then false else true in
@@ -868,6 +797,48 @@ let apply_stat_change p stat_name num_stages =
     cur_stats =
       calc_current_stats p.base_stats p.nature p.level p.ailment new_stages;
   }
+
+let vine_whip =
+  {
+    id = 22;
+    name = "Vine Whip";
+    tipe = "Grass";
+    power = 45;
+    pp = 25;
+    accuracy = 100;
+    priority = 0;
+    target = Enemy;
+    damage_class = Physical;
+    effect_id = 1;
+    effect_chance = 0;
+  }
+
+let poison_powder =
+  {
+    id = 77;
+    name = "Poison Powder";
+    tipe = "Poison";
+    power = 0;
+    pp = 35;
+    accuracy = 75;
+    priority = 0;
+    target = Enemy;
+    damage_class = Status;
+    effect_id = 67;
+    effect_chance = 0;
+  }
+
+let example_move () = vine_whip
+let move_identifiers = [ (22, vine_whip); (77, poison_powder) ]
+
+let move_ids lst =
+  let rec get_move_ids lst = function
+    | [] -> []
+    | h :: t ->
+        if List.mem (snd h) lst then fst h :: get_move_ids lst t
+        else get_move_ids lst t
+  in
+  get_move_ids lst move_identifiers
 
 let add_pokemon_move (pokemon : t) (new_move_id : int) : t =
   let new_move =
