@@ -59,7 +59,6 @@ let zero_stats =
 let one_stats =
   { hp = 1; atk = 1; def = 1; spatk = 1; spdef = 1; spd = 1; acc = 0; eva = 0 }
 
-(* let species p = p.species let base_stats p = p.base_stats*)
 let cur_stats p = p.cur_stats
 let atk p = p.cur_stats.atk
 let def p = p.cur_stats.def
@@ -238,7 +237,6 @@ let move_to_string move =
   ^ damage_class_to_string move.damage_class
   ^ ")"
 
-(*TODO FULLY IMPLEMENT LATER !!! just minimal for now*)
 let pokemon_to_string pokemon =
   let moves =
     if List.length pokemon.moves = 0 then "No moves available."
@@ -459,162 +457,6 @@ let apply_effect (attacker : t) defender move =
       let target =
         match move.effect_id with
         | 1 -> (* nothing *) target
-        | 2 -> (* sleep *) { target with ailment = "asleep" }
-        | 3 -> (* poison *) { target with ailment = "poisoned" }
-        | 5 -> (* burn *) { target with ailment = "burned" }
-        | 6 -> (* freeze *) { target with ailment = "frozen" }
-        | 7 -> (* paralyze *) { target with ailment = "paralyzed" }
-        | 8 ->
-            (* kill user *)
-            attacker.cur_hp <- 0;
-            target
-        | 11 ->
-            (* raise attack by 1 *)
-            if target.stat_stages.atk <= 5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with atk = target.stat_stages.atk + 1 };
-              }
-            else target
-        | 12 ->
-            (* raise defense by 1 *)
-            if target.stat_stages.def <= 5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with def = target.stat_stages.def + 1 };
-              }
-            else target
-        | 17 ->
-            (* raise evasiveness by 1 *)
-            if target.stat_stages.eva <= 5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with eva = target.stat_stages.eva + 1 };
-              }
-            else target
-        | 19 ->
-            (* lower attack by 1 *)
-            if target.stat_stages.atk >= -5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with atk = target.stat_stages.atk - 1 };
-              }
-            else target
-        | 20 ->
-            (* lower defense by 1 *)
-            if target.stat_stages.def >= -5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with def = target.stat_stages.def - 1 };
-              }
-            else target
-        | 24 ->
-            (* lower accuracy by 1 *)
-            if target.stat_stages.acc >= -5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with acc = target.stat_stages.acc - 1 };
-              }
-            else target
-        | 26 ->
-            (* reset stat changes *) { target with stat_stages = zero_stats }
-        | 31 ->
-            (* copy enemy type *)
-            {
-              target with
-              tipe = defender.tipe;
-              is_dual_type = defender.is_dual_type;
-            }
-        | 33 ->
-            (* heal half of max hp *)
-            let new_hp = target.cur_hp + (target.cur_stats.hp / 2) in
-            { target with cur_hp = min new_hp target.cur_stats.hp }
-        | 38 ->
-            (* heal full and sleep *)
-            { target with ailment = "asleep"; cur_hp = target.cur_stats.hp }
-        | 39 ->
-            (* OHKO *)
-            target.cur_hp <- 0;
-            target
-        | 42 ->
-            (* deal flat 40 damage *)
-            let new_hp = target.cur_hp - 40 in
-            { target with cur_hp = max new_hp 0 }
-        | 51 ->
-            (* raise attack by 2 stages *)
-            let new_atk = min 6 (target.stat_stages.atk + 2) in
-            {
-              target with
-              stat_stages = { target.stat_stages with atk = new_atk };
-            }
-        | 52 ->
-            (* raise defense by 2 stages *)
-            let new_def = min 6 (target.stat_stages.def + 2) in
-            {
-              target with
-              stat_stages = { target.stat_stages with def = new_def };
-            }
-        | 53 ->
-            (* raise speed by 2 stages *)
-            let new_spd = min 6 (target.stat_stages.spd + 2) in
-            {
-              target with
-              stat_stages = { target.stat_stages with spd = new_spd };
-            }
-        | 55 ->
-            (* raise spdef by 2 stages *)
-            let new_spdef = min 6 (target.stat_stages.spdef + 2) in
-            {
-              target with
-              stat_stages = { target.stat_stages with spdef = new_spdef };
-            }
-        | 60 ->
-            (* lower enemy defense by 2 stages *)
-            if target.stat_stages.def >= -4 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with def = target.stat_stages.def - 2 };
-              }
-            else
-              { target with stat_stages = { target.stat_stages with def = -6 } }
-        | 61 ->
-            (* lower enemy speed *)
-            if target.stat_stages.spd >= -5 then
-              {
-                target with
-                stat_stages =
-                  { target.stat_stages with spd = target.stat_stages.spd - 1 };
-              }
-            else target
-        | 88 ->
-            (* deal damage equal to user's level *)
-            let new_hp = target.cur_hp - target.level in
-            { target with cur_hp = max new_hp 0 }
-        | 131 ->
-            (* deal 20 flat damage *)
-            let new_hp = target.cur_hp - 20 in
-            { target with cur_hp = max new_hp 0 }
-        | 199 ->
-            (* recoil *)
-            let new_hp = attacker.cur_hp - (attacker.cur_stats.hp / 10) in
-            attacker.cur_hp <- max 0 new_hp;
-            target
-        | 317 ->
-            (* raise spatk and spdef *)
-            let new_spatk = min (target.stat_stages.spatk + 2) 6 in
-            let new_spdef = min (target.stat_stages.spdef + 2) 6 in
-            {
-              target with
-              stat_stages =
-                { target.stat_stages with spatk = new_spatk; spdef = new_spdef };
-            }
         | _ -> failwith "Unknown effect ID"
       in
       if move.target = Self then (target, defender) else (attacker, target)

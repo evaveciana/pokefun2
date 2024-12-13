@@ -1,11 +1,12 @@
 val display_pokemon : int -> unit
-(**Function to display the ASCII art of a specific Pokémon by its ID *)
+(**[display_pokemon i] dispays the ASCII art of a specific Pokémon by its ID [i] *)
 
 val chunk_string : string -> int -> string list
-(** Helper function to split a string into chunks of a specified length *)
+(** [chunk_string str i] splits a string [str] into chunks of length [i] *)
 
 val load_ascii_csv : string -> string list list
-(** Function to load and parse the CSV file containing ASCII art *)
+(** [load_ascii_csv str] loads and parses the CSV file at [str] containing ASCII
+    art *)
 
 val print_pokemon_in_ascii : string -> int -> unit
-(** Function to print a specific Pokémon in ASCII art *)
+(** [print_pokemon_in_ascii str i] prints the pokemon [str] at index [i]. *)

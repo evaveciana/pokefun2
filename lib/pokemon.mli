@@ -1,11 +1,18 @@
 type stats
 (** type for the stats of a Pokemon *)
 
-type damage_class
+type damage_class =
+  | Status
+  | Physical
+  | Special
+
 (** type for a Pokemon's damage class *)
 
-type target
-(** type for the target of a Pokemon's move *)
+type target =
+  | Self
+  | Enemy  (** type for the target of a Pokemon's move *)
+
+(** type for a Pokemon attack (move)*)
 
 type move = {
   id : int;
@@ -20,13 +27,10 @@ type move = {
   effect_id : int;
   effect_chance : int;
 }
-(** type for a Pokemon attack (move)*)
 
-(* type ailment *)
-
-(** type for ailment *)
-val valid_ailments : string list
 (** all the acceptable ailments of a Pokemon *)
+
+val valid_ailments : string list
 
 type t = {
   species : string;
@@ -61,24 +65,6 @@ val one_stats : stats
 val cur_stats : t -> stats
 (** [cur_stats p] is the current stats of pokemon [p], including any changes
     from burn, paralysis, etc. *)
-
-(* val base_hp : t -> int *)
-(** [base_hp p] is the base HP of pokemon [p]. *)
-
-(* val base_atk : t -> int *)
-(** [base_atk p] is the base Attack of pokemon [p]. *)
-
-(* val base_spatk : t -> int *)
-(** [base_spatk p] is the base Special Attack of pokemon [p]. *)
-
-(* val base_def : t -> int *)
-(** [base_def p] is the base Defense of pokemon [p]. *)
-
-(* val base_spdef : t -> int *)
-(** [base_spdef p] is the base Special Defense of pokemon [p]. *)
-
-(* val base_spd : t -> int *)
-(** [base_spd p] is the base Speed of pokemon [p]. *)
 
 val cur_hp : t -> int
 (** [cur_hp p] is the current HP of pokemon [p], including changes from damage. *)
@@ -176,3 +162,6 @@ val get_pokemon_id : string -> int
 val calc_damage : t -> t -> move -> int
 (** [calc_damage attacker defender move] is how much damage that move would do
     by the attacker to the defender *)
+
+val apply_effect : t -> t -> move -> t * t
+(**[]*)
