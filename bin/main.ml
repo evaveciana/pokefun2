@@ -3,7 +3,6 @@ open Pokefun.Battle
 
 (* let play = main_menu () *)
 
-(** Game loop for a single player*)
 let play = battle_loop (setup_fake ())
 (* let () = Random.self_init () (* let create_AI_team lvl = let team = *)
 

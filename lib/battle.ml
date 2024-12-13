@@ -650,7 +650,7 @@ let rec main_menu () =
      1. Pick your own team\n\
      2. Play with a preset team\n\
      3. Exit\n";
-  let all_pokemon = every_pokemon (*()*) in
+  let all_pokemon = every_pokemon in
   match read_line () with
   | "1" | "Play" | "play" | "p" ->
       print_endline "Starting the game...";
