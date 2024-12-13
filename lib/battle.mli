@@ -20,9 +20,9 @@ val create_ai_team : unit -> team
 val get_player_action : unit -> decision
 (** waits for the player action to input something in the terminal (currently no gui yet)*)
 
-val make_ai_action : battle_state -> decision
+(* val make_ai_action : battle_state -> decision *)
 (** take the current state and make a new*)
-val handle_player_decision : decision -> battle_state -> battle_state
+(* val handle_player_decision : decision -> battle_state -> battle_state *)
 (** takes decision and advances the current battle_state further to progress the game*)
 (* val ai_action : battle_state -> battle_state *)
 
