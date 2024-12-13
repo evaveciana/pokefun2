@@ -11,19 +11,6 @@ type stats = {
   eva : int;
 }
 
-(* type tipe = | Normal | Fire | Water | Grass | Electric | Ice | Fighting |
-   Poison | Ground | Flying | Psychic | Bug | Rock | Ghost | Dark | Dragon |
-   Steel | Fairy | NoneType *)
-
-(* type nature = | Hardy | Lonely | Brave | Adamant | Naughty | Bold | Docile |
-   Relaxed | Impish | Lax | Timid | Hasty | Serious | Jolly | Naive | Modest |
-   Mild | Quiet | Bashful | Rash | Calm | Gentle | Sassy | Careful | Quirky *)
-
-(* let valid_natures = [ "hardy"; "lonely"; "brave"; "adamant"; "naughty";
-   "bold"; "docile"; "relaxed"; "impish"; "lax"; "timid"; "hasty"; "serious";
-   "jolly"; "naive"; "modest"; "mild"; "quiet"; "bashful"; "rash"; "calm";
-   "gentle"; "sassy"; "careful"; "quirky"; ] *)
-
 type damage_class =
   | Status
   | Physical
@@ -46,8 +33,6 @@ type move = {
   effect_id : int;
   effect_chance : int;
 }
-
-(* type ailment = | Burned | Paralyzed | Asleep | Frozen | Confused | Healthy *)
 
 let valid_ailments =
   [ "burned"; "paralyzed"; "asleep"; "frozen"; "confused"; "healthy" ]
@@ -76,15 +61,6 @@ let one_stats =
 
 (* let species p = p.species let base_stats p = p.base_stats*)
 let cur_stats p = p.cur_stats
-
-(* Modify with ailment and stat stages *)
-(*let base_hp p = *)
-(* p.base_stats.hp let base_atk p = p.base_stats.atk let base_spatk p =
-   p.base_stats.spatk let base_def p = p.base_stats.def let base_spdef p =
-   p.base_stats.spdef let base_spd p = p.base_stats.spd let hp p =
-   p.cur_stats.hp let max_hp p = 0 (* TODO*) let atk p = p.cur_stats.atk let def
-   p = p.cur_stats.def let spatk p = p.cur_stats.spatk let spdef p =
-   p.cur_stats.spdef let spd p = p.cur_stats.spd*)
 let atk p = p.cur_stats.atk
 let def p = p.cur_stats.def
 let spatk p = p.cur_stats.spatk
@@ -113,24 +89,43 @@ let list_to_stats = function
   | _ -> failwith "Invalid stats list"
 
 let search_csv_helper_one_match filename match_col key target_col =
-  let file = Csv.load filename in
-  match List.find_opt (fun row -> List.nth row match_col = key) file with
-  | Some row -> List.nth row target_col
-  | None -> failwith "not found"
+  try
+    let file = Csv.load filename in
+    match List.find_opt (fun row -> List.nth row match_col = key) file with
+    | Some row -> List.nth row target_col
+    | None -> failwith ("not found: " ^ key ^ " file: " ^ filename)
+  with Failure _ ->
+    raise (Failure "Attempting to match to column out of range one_match")
 
 let search_csv_helper_many_matches filename match_col key target_col =
-  let file = Csv.load filename in
-  List.fold_left
-    (fun acc elt ->
-      if List.nth elt match_col = key then List.nth elt target_col :: acc
-      else acc)
-    [] file
+  try
+    let file = Csv.load filename in
+    List.fold_left
+      (fun acc elt ->
+        if List.nth elt match_col = key then List.nth elt target_col :: acc
+        else acc)
+      [] file
+  with Failure _ ->
+    raise (Failure "Attempting to match to column out of range many_matches")
 
 let search_csv_helper_whole_row filename match_col key start_col =
-  let file = Csv.load filename in
-  match List.find_opt (fun row -> List.nth row match_col = key) file with
-  | Some row -> List.filteri (fun i _ -> i >= start_col) row
-  | None -> failwith "none found"
+  try
+    let file = Csv.load filename in
+    match List.find_opt (fun row -> List.nth row match_col = key) file with
+    | Some row -> List.filteri (fun i _ -> i >= start_col) row
+    | None -> failwith "none found"
+  with Failure _ ->
+    raise
+      (Failure
+         ("Attempting to match to column out of range whole_row " ^ filename
+        ^ " " ^ key))
+
+let search_csv_helper_many_rows filename match_col key =
+  try
+    let file = Csv.load filename in
+    List.filter (fun row -> List.nth row match_col = key) file
+  with Failure _ ->
+    raise (Failure "Attempting to match to column out of range many_rows")
 
 let get_multipliers_by_nature n =
   let multipliers =
@@ -207,19 +202,20 @@ let get_move_id_from_name move_name =
   let id = search_csv_helper_one_match "data/moves.csv" 1 move_name 0 in
   int_of_string id
 
-(* let tipe_to_string = function | Normal -> "Normal" | Fighting -> "Fighting" |
-   Flying -> "Flying" | Poison -> "Poison" | Ground -> "Ground" | Rock -> "Rock"
-   | Bug -> "Bug" | Ghost -> "Ghost" | Steel -> "Steel" | Fire -> "Fire" | Water
-   -> "Water" | Grass -> "Grass" | Electric -> "Electric" | Psychic -> "Psychic"
-   | Ice -> "Ice" | Dragon -> "Dragon" | Dark -> "Dark" | Fairy -> "Fairy" |
-   NoneType -> "NoneType"
-
-   let string_to_tipe = function | "Normal" -> Normal | "Fighting" -> Fighting |
-   "Flying" -> Flying | "Poison" -> Poison | "Ground" -> Ground | "Rock" -> Rock
-   | "Bug" -> Bug | "Ghost" -> Ghost | "Steel" -> Steel | "Fire" -> Fire |
-   "Water" -> Water | "Grass" -> Grass | "Electric" -> Electric | "Psychic" ->
-   Psychic | "Ice" -> Ice | "Dragon" -> Dragon | "Dark" -> Dark | "Fairy" ->
-   Fairy | "NoneType" -> NoneType | _ -> failwith "Invalid tipe" *)
+let get_move_id_from_move = function
+  | {
+      id;
+      name;
+      tipe;
+      power;
+      pp;
+      accuracy;
+      priority;
+      target;
+      damage_class;
+      effect_id;
+      effect_chance;
+    } -> id
 
 let damage_class_to_string damage_class =
   match damage_class with
@@ -229,9 +225,9 @@ let damage_class_to_string damage_class =
 
 let damage_class_from_int i =
   match i with
-  | 1 -> Status
-  | 2 -> Physical
-  | 3 -> Special
+  | 1 -> Physical
+  | 2 -> Special
+  | 3 -> Status
   | _ -> failwith "Unknown"
 
 let move_to_string move =
@@ -287,13 +283,8 @@ let create_move_from_name move_name =
 let get_moves pokemon_species =
   let poke_id = get_pokemon_id pokemon_species in
   let move_ids = get_move_ids poke_id in
-  let rec find_identifier move_id =
-    match
-      search_csv_helper_whole_row "data/moves.csv" 0 (string_of_int move_id) 0
-    with
-    | [ _; (* Skip id *)
-           identifier; _; _; _; _; _; _; _; _; _; _ ] -> identifier
-    | _ -> "Unknown move"
+  let find_identifier move_id =
+    search_csv_helper_one_match "data/moves.csv" 0 (string_of_int move_id) 1
   in
   List.map find_identifier move_ids
 
@@ -336,20 +327,13 @@ let display_learnable_moves pokemon_species =
     move_ids
 
 let create name lvl nat =
-  let pokemon_tipes = Csv.load "data/pokemon_types.csv" in
   let pokemon_id = get_pokemon_id name in
-
-  let filter_by_int data id =
-    List.filter
-      (fun row ->
-        match row with
-        | [] -> false
-        | hd :: _ -> ( try int_of_string hd = id with Failure _ -> false))
-      data
+  let tipes =
+    search_csv_helper_many_rows "data/pokemon_types.csv" 0
+      (string_of_int pokemon_id)
   in
 
   let tipe =
-    let tipes = filter_by_int pokemon_tipes pokemon_id in
     let match_tipe tipe_id =
       search_csv_helper_one_match "data/types.csv" 0 (string_of_int tipe_id) 1
     in
@@ -363,9 +347,11 @@ let create name lvl nat =
       (first_tipe, second_tipe)
   in
 
-  let pokemon_stats = Csv.load "data/pokemon_stats.csv" in
+  let stat_list =
+    search_csv_helper_many_rows "data/pokemon_stats.csv" 0
+      (string_of_int pokemon_id)
+  in
 
-  let stat_list = filter_by_int pokemon_stats pokemon_id in
   let base_stats =
     {
       hp = int_of_string (List.nth (List.hd stat_list) 2);
@@ -404,154 +390,13 @@ let create name lvl nat =
 
 let calc_effectiveness_mult (move : move) (defender : t) =
   let multiplier move_type target_type =
-    if move_type = "Normal" then
-      if target_type = "Rock" || target_type = "Steel" then 0.5
-      else if target_type = "Ghost" then 0.0
-      else 1.0
-    else if move_type = "Fire" then
-      if
-        target_type = "Fire" || target_type = "Water" || target_type = "Rock"
-        || target_type = "Dragon"
-      then 0.5
-      else if
-        target_type = "Grass" || target_type = "Bug" || target_type = "Ice"
-        || target_type = "Steel"
-      then 2.0
-      else 1.0
-    else if move_type = "Water" then
-      if
-        target_type = "Water" || target_type = "Grass" || target_type = "Dragon"
-      then 0.5
-      else if
-        target_type = "Fire" || target_type = "Ground" || target_type = "Rock"
-      then 2.0
-      else 1.0
-    else if move_type = "Electric" then
-      if
-        target_type = "Electric" || target_type = "Grass"
-        || target_type = "Dragon"
-      then 0.5
-      else if target_type = "Water" || target_type = "Flying" then 2.0
-      else if target_type = "Ground" then 0.0
-      else 1.0
-    else if move_type = "Grass" then
-      if
-        target_type = "Fire" || target_type = "Grass" || target_type = "Poison"
-        || target_type = "Flying" || target_type = "Bug"
-        || target_type = "Dragon" || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Water" || target_type = "Ground" || target_type = "Rock"
-      then 2.0
-      else 1.0
-    else if move_type = "Ice" then
-      if
-        target_type = "Fire" || target_type = "Water" || target_type = "Ice"
-        || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Grass" || target_type = "Ground"
-        || target_type = "Flying" || target_type = "Dragon"
-      then 2.0
-      else 1.0
-    else if move_type = "Fighting" then
-      if
-        target_type = "Poison" || target_type = "Flying"
-        || target_type = "Psychic" || target_type = "Bug"
-        || target_type = "Fairy"
-      then 0.5
-      else if
-        target_type = "Normal" || target_type = "Rock" || target_type = "Steel"
-        || target_type = "Ice" || target_type = "Dark"
-      then 2.0
-      else if target_type = "Ghost" then 0.0
-      else 1.0
-    else if move_type = "Poison" then
-      if
-        target_type = "Poison" || target_type = "Ground" || target_type = "Rock"
-        || target_type = "Ghost"
-      then 0.5
-      else if target_type = "Grass" || target_type = "Fairy" then 2.0
-      else if target_type = "Steel" then 0.0
-      else 1.0
-    else if move_type = "Ground" then
-      if target_type = "Grass" || target_type = "Bug" then 0.5
-      else if
-        target_type = "Fire" || target_type = "Electric"
-        || target_type = "Poison" || target_type = "Rock"
-        || target_type = "Steel"
-      then 2.0
-      else if target_type = "Flying" then 0.0
-      else 1.0
-    else if move_type = "Flying" then
-      if
-        target_type = "Electric" || target_type = "Rock"
-        || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Grass" || target_type = "Fighting" || target_type = "Bug"
-      then 2.0
-      else 1.0
-    else if move_type = "Psychic" then
-      if target_type = "Psychic" || target_type = "Steel" then 0.5
-      else if target_type = "Fighting" || target_type = "Poison" then 2.0
-      else if target_type = "Dark" then 0.0
-      else 1.0
-    else if move_type = "Bug" then
-      if
-        target_type = "Fire" || target_type = "Fighting"
-        || target_type = "Poison" || target_type = "Flying"
-        || target_type = "Ghost" || target_type = "Steel"
-        || target_type = "Fairy"
-      then 0.5
-      else if
-        target_type = "Grass" || target_type = "Psychic" || target_type = "Dark"
-      then 2.0
-      else 1.0
-    else if move_type = "Rock" then
-      if
-        target_type = "Fighting" || target_type = "Ground"
-        || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Fire" || target_type = "Ice" || target_type = "Flying"
-        || target_type = "Bug"
-      then 2.0
-      else 1.0
-    else if move_type = "Ghost" then
-      if target_type = "Dark" then 0.5
-      else if target_type = "Ghost" || target_type = "Psychic" then 2.0
-      else if target_type = "Normal" then 0.0
-      else 1.0
-    else if move_type = "Dragon" then
-      if target_type = "Steel" then 0.5
-      else if target_type = "Dragon" then 2.0
-      else if target_type = "Dairy" then 0.0
-      else 1.0
-    else if move_type = "Dark" then
-      if
-        target_type = "Fighting" || target_type = "Dark"
-        || target_type = "Fairy"
-      then 0.5
-      else if target_type = "Psychic" || target_type = "Ghost" then 2.0
-      else 1.0
-    else if move_type = "Steel" then
-      if
-        target_type = "Fire" || target_type = "Water"
-        || target_type = "Electric" || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Ice" || target_type = "Rock" || target_type = "Fairy"
-      then 2.0
-      else 1.0
-    else if move_type = "Fairy" then
-      if target_type = "Fire" || target_type = "Poison" || target_type = "Steel"
-      then 0.5
-      else if
-        target_type = "Ice" || target_type = "Rock" || target_type = "Fairy"
-      then 2.0
-      else 1.0
-    else failwith "Invalid type"
+    match
+      List.find_opt
+        (fun row -> List.hd row = move_type && List.nth row 1 = target_type)
+        (Csv.load "data/effectiveness_by_type.csv")
+    with
+    | Some row -> float_of_string (List.nth row 2)
+    | None -> 1.0
   in
 
   let move_type = move.tipe in
@@ -565,7 +410,7 @@ let calc_effectiveness_mult (move : move) (defender : t) =
 let () = Random.self_init ()
 let roll chance = Random.int 100 < chance
 
-let deal_damage attacker defender move =
+let calc_damage attacker defender move =
   let a_stat, d_stat =
     match move.damage_class with
     | Physical ->
@@ -589,15 +434,20 @@ let deal_damage attacker defender move =
     | t1, t2 -> if t1 = move.tipe || t2 = move.tipe then 1.5 else 1.
   in
   let eff_mult = calc_effectiveness_mult move defender in
-  let dmg =
-    (((2.0 *. float_of_int attacker.level /. 5.0) +. 2.0)
-     *. float_of_int move.power
-     *. (float_of_int a_stat /. float_of_int d_stat)
-     /. 50.0
-    +. 2.0)
-    *. crit *. rand *. stab *. eff_mult
-  in
-  defender.cur_hp <- max 0 (int_of_float (float_of_int defender.cur_hp -. dmg));
+
+  int_of_float
+    ((((2.0 *. float_of_int attacker.level /. 5.0) +. 2.0)
+      *. float_of_int move.power
+      *. (float_of_int a_stat /. float_of_int d_stat)
+      /. 50.0
+     +. 2.0)
+    *. crit *. rand *. stab *. eff_mult)
+
+let deal_damage attacker defender move =
+  let damage = calc_damage attacker defender move in
+  print_endline ("Dealt " ^ string_of_int damage ^ " damage.");
+
+  defender.cur_hp <- max 0 (defender.cur_hp - damage);
   (attacker, defender)
 
 (* Applies the effect of the move to the target. Calls deal_damage after if
@@ -772,7 +622,7 @@ let apply_effect (attacker : t) defender move =
   in
   if move.effect_chance = -1 then (a, d) else deal_damage a d move
 
-let attack (attacker : t) (defender : t) (move : move) : t * t =
+let attack attacker defender move =
   let attacker_move = List.find (fun m -> m = move) attacker.moves in
   if attacker_move.pp = 0 then (
     print_endline "Out of pp!";
@@ -786,16 +636,11 @@ let attack (attacker : t) (defender : t) (move : move) : t * t =
     in
     let updated_attacker = { attacker with moves = updated_moves } in
 
-    if move.effect_id = 1 then (
-      let old_health = defender.cur_hp in
+    if move.effect_id = 1 then
       let new_attacker, new_defender =
         deal_damage updated_attacker defender move
       in
-      let new_health = new_defender.cur_hp in
-      let dmg_dealt = old_health - new_health in
-      print_endline ("Dealt " ^ string_of_int dmg_dealt ^ " damage.");
-      print_endline ("Opponent health: " ^ string_of_int new_health);
-      (new_attacker, new_defender))
+      (new_attacker, new_defender)
     else apply_effect updated_attacker defender move
 
 let apply_stat_change p stat_name num_stages =
@@ -818,58 +663,8 @@ let apply_stat_change p stat_name num_stages =
       calc_current_stats p.base_stats p.nature p.level p.ailment new_stages;
   }
 
-let vine_whip =
-  {
-    id = 22;
-    name = "Vine Whip";
-    tipe = "Grass";
-    power = 45;
-    pp = 25;
-    accuracy = 100;
-    priority = 0;
-    target = Enemy;
-    damage_class = Physical;
-    effect_id = 1;
-    effect_chance = 0;
-  }
-
-let poison_powder =
-  {
-    id = 77;
-    name = "Poison Powder";
-    tipe = "Poison";
-    power = 0;
-    pp = 35;
-    accuracy = 75;
-    priority = 0;
-    target = Enemy;
-    damage_class = Status;
-    effect_id = 67;
-    effect_chance = 0;
-  }
-
-let example_move () = vine_whip
-let move_identifiers = [ (22, vine_whip); (77, poison_powder) ]
-
-let move_ids lst =
-  let rec get_move_ids lst = function
-    | [] -> []
-    | h :: t ->
-        if List.mem (snd h) lst then fst h :: get_move_ids lst t
-        else get_move_ids lst t
-  in
-  get_move_ids lst move_identifiers
-
-let add_pokemon_move (pokemon : t) (new_move_id : int) : t =
-  let new_move =
-    let rec find_move id = function
-      | [] -> raise (Failure "Unrecognized move id")
-      | h :: t -> if fst h = id then snd h else find_move id t
-    in
-    find_move new_move_id move_identifiers
-  in
+let add_pokemon_move pokemon move_name =
+  let new_move = create_move_from_name move_name in
   if List.length pokemon.moves >= 4 then
-    raise (Failure "A Pokémon can only have up to 4 moves.")
-  else if List.mem new_move pokemon.moves then
-    { pokemon with moves = pokemon.moves @ [ new_move ] }
-  else raise (Failure "This move is not permitted by this species")
+    raise (Failure "A Pokemon can only have up to 4 moves.")
+  else { pokemon with moves = pokemon.moves @ [ new_move ] }

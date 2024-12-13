@@ -1,0 +1,10 @@
+let pokemonf  0
+let pokemon_statsf  1
+let statsf  2
+let typesf  3
+let pokemon_typesf  4
+let movesf  5
+let pokemon_movesf  6
+let multipliers_ailmentf  7
+let multipliers_naturef  8
+let multipliers_statsf  9

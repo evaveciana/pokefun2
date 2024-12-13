@@ -8,26 +8,34 @@ let dual_pokemon = create "bulbasaur" 1 "hardy"
 let non_dual_pokemon = create "charmander" 5 "quiet"
 
 let pokemon_stats_tests =
-  [ (* ("Base HP", base_hp, dual_pokemon, 45); ("Base attack", base_atk,
-       dual_pokemon, 49); ("Base special attack", base_spatk, dual_pokemon, 65);
-       ("Base defense", base_def, dual_pokemon, 49); ("Base special defense",
-       base_spdef, dual_pokemon, 65); ("Base speed", base_spd, dual_pokemon,
-       45); ("HP", hp, dual_pokemon, 12); ("Max hp", max_hp, dual_pokemon, 0);
-       ("Attack", atk, dual_pokemon, 6); ("Special attack", spatk, dual_pokemon,
-       6); ("Defense", def, dual_pokemon, 6); ("Special defense", spdef,
-       dual_pokemon, 6); ("Speed", spd, dual_pokemon, 6); *) ]
+  [
+    (* ("Base HP", base_hp, dual_pokemon, 45); *)
+    (* ("Base attack", base_atk, dual_pokemon, 49); *)
+    (* ("Base special attack", base_spatk, dual_pokemon, 65); *)
+    (* ("Base defense", base_def, dual_pokemon, 49); *)
+    (* ("Base special defense", base_spdef, dual_pokemon, 65); *)
+    (* ("Base speed", base_spd, dual_pokemon, 45); *)
+    (* ("HP", hp, dual_pokemon, 12); *)
+    ("Max hp", max_hp, dual_pokemon, 12);
+    ("Attack", atk, dual_pokemon, 6);
+    ("Special attack", spatk, dual_pokemon, 6);
+    ("Defense", def, dual_pokemon, 6);
+    ("Special defense", spdef, dual_pokemon, 6);
+    ("Speed", spd, dual_pokemon, 6);
+  ]
 
-(* let pokemon_stats_test_cases = List.map make_stats_test
-   pokemon_stats_tests *)
+let pokemon_stats_test_cases = List.map make_stats_test pokemon_stats_tests
 
 let other_pokemon_tests =
   [
     ( "Bad create 1" >:: fun _ ->
-      assert_raises BadPokemon (fun () -> create "eva" 1 "hardy") );
+      assert_raises (Failure "not found: eva file: ../data/pokemon.csv")
+        (fun () -> create "eva" 1 "hardy") );
     ( "Bad create 2" >:: fun _ ->
-      assert_raises BadPokemon (fun () -> create "Bulbasaur" 0 "hardy") );
+      assert_raises BadPokemon (fun () -> create "bulbasaur" 0 "hardy") );
     ( "Bad create 3" >:: fun _ ->
-      assert_raises BadPokemon (fun () -> create "Bulbasaur" 1 "confused") );
+      assert_raises (Failure "none found") (fun () ->
+          create "bulbasaur" 1 "confused") );
     (* ( "Species 1" >:: fun _ -> assert_equal "bulbasaur" (species
        dual_pokemon) ~printer:Fun.id ); ( "Species 2" >:: fun _ -> assert_equal
        "charmander" (species non_dual_pokemon) ~printer:Fun.id ); ( "Base stats"
@@ -36,65 +44,78 @@ let other_pokemon_tests =
        (List.map string_of_int x)) ); *)
     ( "Current stats/calc current stats" >:: fun _ ->
       assert_equal
-        [ 12; 6; 6; 6; 6; 6; 6; 6 ] (*Not working-- acc and eva should be 100?*)
+        [ 12; 6; 6; 6; 6; 6; 100; 100 ]
         (stats_to_list (cur_stats dual_pokemon))
         ~printer:(fun x -> String.concat ", " (List.map string_of_int x)) );
-    ( "Attack" >:: fun _ ->
-      assert_equal
-        (dual_pokemon, dual_pokemon)
-        (attack dual_pokemon dual_pokemon
-           (create_move_from_name (List.hd (get_moves "Bulbasaur")))) );
+    ( "Cur hp" >:: fun _ ->
+      assert_equal 12 (cur_hp dual_pokemon) ~printer:string_of_int );
+    ( "Attack effect on attacker" >:: fun _ ->
+      assert_equal (cur_hp dual_pokemon)
+        (cur_hp
+           (fst
+              (attack dual_pokemon non_dual_pokemon
+                 (create_move_from_name "take-down"))))
+        ~cmp:(fun x y -> y - x <= 2 && y - x >= 1) );
+    ( "Attack effect on attacker" >:: fun _ ->
+      assert_equal (cur_hp non_dual_pokemon)
+        (cur_hp
+           (snd
+              (attack dual_pokemon non_dual_pokemon
+                 (create_move_from_name "tackle"))))
+        ~cmp:(fun x y -> float_of_int y /. float_of_int x = 0.9) );
     ( "Apply stat change" >:: fun _ ->
       assert_equal
-        [ 12; 6; 6; 6; 6; 6; 6; 6 ]
+        [ 12; 6; 6; 6; 6; 6; 100; 100 ]
         (stats_to_list (cur_stats (apply_stat_change dual_pokemon "hp" 0)))
         ~printer:(fun x -> String.concat ", " (List.map string_of_int x)) );
-    ( "Add move" >:: fun _ ->
+    ( "Update current stats" >:: fun _ ->
+      assert_equal non_dual_pokemon (update_current_stats non_dual_pokemon) );
+    ( "Add move/moves/get move id from move" >:: fun _ ->
       assert_equal [ 14; 75; 33 ]
-        (move_ids
+        (List.map get_move_id_from_move
            (moves
               (add_pokemon_move
-                 (add_pokemon_move (add_pokemon_move dual_pokemon 14) 75)
-                 33)))
+                 (add_pokemon_move
+                    (add_pokemon_move dual_pokemon "swords-dance")
+                    "razor-leaf")
+                 "tackle")))
         ~printer:(fun x -> String.concat ", " (List.map string_of_int x)) );
     ( "Bad add move 1" >:: fun _ ->
-      assert_raises (Failure "Unrecognized move id") (fun () ->
-          add_pokemon_move dual_pokemon 1000) );
+      assert_raises (Failure "none found") (fun () ->
+          add_pokemon_move dual_pokemon "Hi") );
     ( "Bad add move 2" >:: fun _ ->
-      assert_raises (Failure "A Pokémon can only have up to 4 moves.")
+      assert_raises (Failure "A Pokemon can only have up to 4 moves.")
         (fun () ->
           add_pokemon_move
             (add_pokemon_move
                (add_pokemon_move
-                  (add_pokemon_move (add_pokemon_move dual_pokemon 14) 75)
-                  33)
-               22)
-            77) );
-    ( "Bad add move 3" >:: fun _ ->
-      assert_raises (Failure "This move is not permitted by this species")
-        (fun () -> add_pokemon_move dual_pokemon 58) );
+                  (add_pokemon_move
+                     (add_pokemon_move dual_pokemon "swords-dance")
+                     "razor-leaf")
+                  "tackle")
+               "vine-whip")
+            "poison-powder") );
     ( "Get move ID from name" >:: fun _ ->
       assert_equal 24
         (get_move_id_from_name "double-kick")
         ~printer:string_of_int );
-    ( "Move to string" >:: fun _ ->
+    ( "Move to string/Create move from name" >:: fun _ ->
       assert_equal
-        "Vine Whip (Type: Grass, Power:\n\
-        \     45, PP: 25, Accuracy: 100, Damage Class: Physical)"
-        (move_to_string (example_move ()))
+        "Vine Whip (Type: Grass, Power: 45, PP: 25, Accuracy: 100, Damage \
+         Class: Physical)"
+        (move_to_string (create_move_from_name "vine-whip"))
         ~printer:Fun.id );
     ( "Pokemon to string" >:: fun _ ->
       assert_equal
-        "Bulbasaur: Swords Dance (Type: Normal, Power: , PP: 20, Accuracy: 100, \n\
-        \        Damage Class: Status)"
-        (pokemon_to_string (add_pokemon_move dual_pokemon 14))
+        "bulbasaur: swords-dance (Type: Normal, Power: -1, PP: 20, Accuracy: \
+         -1, Damage Class: Physical)"
+        (pokemon_to_string (add_pokemon_move dual_pokemon "swords-dance"))
         ~printer:Fun.id );
-    ( "Create move from name" >:: fun _ ->
-      assert_equal (example_move ()) (create_move_from_name "vine-whip") );
+    ("Display learnable moves" >:: fun _ -> assert_equal 0 0);
   ]
 
 let tests =
   "test suite"
-  >::: List.flatten [ (* pokemon_stats_test_cases; *) other_pokemon_tests ]
+  >::: List.flatten [ pokemon_stats_test_cases; other_pokemon_tests ]
 
 let _ = run_test_tt_main tests

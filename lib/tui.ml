@@ -32,9 +32,9 @@ let print_pokemon_in_ascii filename pokemon_index =
     List.iter print_endline ascii_art
   with
   | Failure _ -> print_endline "Invalid Pokémon\n\n   index."
-  | _ -> print_endline "Error loading or parsing ASCII file."
+  | _ -> print_endline ("Error loading or parsing ASCII file. " ^ filename)
 
 let display_pokemon pokemon_id =
-  let filename = "lib/python/data/ascii.csv" in
+  let filename = "data/ascii.csv" in
   let csv_index = (2 * (pokemon_id - 1)) + 1 in
   print_pokemon_in_ascii filename csv_index

@@ -13,8 +13,7 @@ val setup_fake : unit -> battle_state
 
 val init_battle : team -> team -> battle_state
 (** starts the battle by having two teams start the game with populated moves and full health*)
-val create_random_team : unit -> team
-(** creates a random team of 6 pokemon, 4 moves each, random nature*)
+
 val create_ai_team : unit -> team
 (** creates reasonably balanced team of 6 pokemon, 4 moves each, random natures*)
 val get_player_action : unit -> decision

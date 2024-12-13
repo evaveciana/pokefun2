@@ -1,16 +1,6 @@
 type stats
 (** type for the stats of a Pokemon *)
 
-(* type tipe = | Normal | Fire | Water | Grass | Electric | Ice | Fighting |
-   Poison | Ground | Flying | Psychic | Bug | Rock | Ghost | Dark | Dragon |
-   Steel | Fairy | NoneType * type for a Pokemon type *)
-
-(* type nature *)
-(** type for a Pokemon's nature *)
-
-(* val valid_natures : string list *)
-(** all the acceptable natures of a Pokmeon *)
-
 type damage_class
 (** type for a Pokemon's damage class *)
 
@@ -124,14 +114,18 @@ val attack : t -> t -> move -> t * t
     pokemon [defender] and returns the resulting (attacker, defender) as a tuple *)
 
 val update_current_stats : t -> t
-(** [update_current_stats p] updates the current stats of a pokemon with its
-    current status *)
+(** [update_current_stats p filepaths] updates the current stats of a pokemon
+    with its current status with filepaths from [filepaths]*)
 
 val stats_to_list : stats -> int list
 (** [stats_to_list stats] is a list representation of [stats]. *)
 
 val get_move_id_from_name : string -> int
-(** [get_move_id_from_name str] is the csv move id of the move of name 'str'*)
+(** [get_move_id_from_name str filepaths] is the csv move id of the move of name
+    'str' with filepaths from [filepaths]*)
+
+val get_move_id_from_move : move -> int
+(** [get_move_id_from_move move] is the move id of the move [move]*)
 
 val move_to_string : move -> string
 (** [move_to_string move] is the necessary information in string form of move*)
@@ -140,26 +134,21 @@ val pokemon_to_string : t -> string
 (** [pokemon_to_string t] is the name and learned moves of a pokemon*)
 
 val create_move_from_name : string -> move
-(** [create_move_from_name str] from the csv, initializes a move record with
-    name 'str'*)
+(** [create_move_from_name str filepaths] from the csv, initializes a move
+    record with name 'str' with filepaths from [filepaths]*)
 
 val display_learnable_moves : string -> unit
-(** [display_learnable_moves str] prints out each move that the pokemon of
-    species str can learn, with some basic info about the move*)
-
-val example_move : unit -> move
-(** purely for testing, just returns a premade move*)
-
-val move_ids : move list -> int list
-(** [move_ids lst] is the list of integer ids representing the moves in [lst]. *)
+(** [display_learnable_moves str filepaths] prints out each move that the
+    pokemon of species str can learn, with some basic info about the movemwith
+    filepaths from [filepaths]*)
 
 val get_moves : string -> string list
-(** [get_moves str] is the list of moves associated with a Pokemon of species
-    [str]. *)
+(** [get_moves str filepaths] is the list of moves associated with a Pokemon of
+    species [str] with filepaths from [filepaths]*)
 
 val create : string -> int -> string -> t
 (** [create species level nature] is a [species] pokemon that is level [level],
-    and has nature [nature] *)
+    and has nature [nature] with filepaths from [filepaths]*)
 
 val calc_effectiveness_mult : move -> t -> float
 (** [calc_effectiveness_mult move t] is the float multiplier that is used to
@@ -172,10 +161,23 @@ val attack : t -> t -> move -> t * t
     after [a] made move [move]. *)
 
 val apply_stat_change : t -> string -> int -> t
-(** [apply_stat_change p stat_name num_stages] applies [num_stages] stat change
-    to the stat [stat_name] of pokemon [p] and returns the new pokemon *)
+(** [apply_stat_change p stat_name num_stages filepaths] applies [num_stages]
+    stat change to the stat [stat_name] of pokemon [p] and returns the new
+    pokemon with filepaths from [filepaths]*)
 
-val add_pokemon_move : t -> int -> t
-(** [add_pokemon_move pokemon new_move_id] adds the move with id [new_move_id]
-    to [pokemon]'s list of moves and returns an updated Pokémon with the new
-    move. Raises [failure] if the Pokémon already has 4 moves. *)
+val add_pokemon_move : t -> string -> t
+(** [add_pokemon_move pokemon move_name filepaths] adds the move with name
+    [move_name] to [pokemon]'s list of moves and returns an updated Pokémon with
+    the new move. Raises [failure] if the Pokémon already has 4 moves. with
+    filepaths from [filepaths]*)
+
+val get_pokemon_id : string -> int
+(**[get_pokemon_id poke_name filepath ] is the ID of the Pokémon with the name
+   [poke_name]. Searches for [poke_name] in the "data/pokemon.csv" file,
+   retrieves the corresponding ID, and returns it as an integer with filepaths
+   from [filepaths]. Raises [failure] if the Pokémon name is not found or the
+   data is invalid. *)
+
+val calc_damage : t -> t -> move -> int
+(** [calc_damage attacker defender move] is how much damage that move would do
+    by the attacker to the defender *)

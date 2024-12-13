@@ -1,5 +1,5 @@
 (test
  (name test_pokefun)
  (libraries ounit2 pokefun)
- (deps
-  (glob_files_rec ../data/*)))
+ (deps (glob_files_rec data/*))
+ )

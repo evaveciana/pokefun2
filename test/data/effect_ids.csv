@@ -1,0 +1,32 @@
+id,effect
+1,nothing
+2,sleep
+3,poison
+5,burn
+6,freeze
+7,paralysis
+8,kills user
+9,dream eater
+11,raise attack
+12,raise defense
+17,raise evasion
+19,lower attack
+20,lower enemy defense
+24,lower enemy accuracy 
+26,remove all status effects
+31,conversion
+33,heal half
+38,heal full
+39,OHKO
+42,deal flat 40 damage
+51,raise attack by 2 stages
+52,raise defense by 2 stages
+53,raise speed by 2 stages
+55,raise spdef by 2 stages
+60,lower enemy defense by 2 stages
+61,lower enemy speed
+88,deal damage equal to users level
+131,deal 20 flat damage
+199,recoil
+317,raise spatk and spdef
+
