@@ -1,5 +1,6 @@
 open Pokemon
 open ANSITerminal
+open Tui
 
 let every_pokemon () =
   let rows = Csv.load "lib/python/data/first_151_pokemon.csv" in
@@ -92,7 +93,8 @@ let create_random_team () : team =
   in
   generate_team 0 []
 
-let create_ai_team () : team = failwith "TODO"
+(*for now just generate random team, may change later*)
+let create_ai_team () : team = create_random_team ()
 
 (*in battle choosing a move*)
 let choose_move () : move = failwith "TODO"

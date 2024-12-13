@@ -83,6 +83,8 @@ let cur_stats p = p.cur_stats
    p = p.cur_stats.def let spatk p = p.cur_stats.spatk let spdef p =
    p.cur_stats.spdef let spd p = p.cur_stats.spd*)
 let moves p = p.moves
+let spd p = p.cur_stats.spd
+let cur_hp p = p.cur_stats.hp
 
 let stats_to_list stats =
   [

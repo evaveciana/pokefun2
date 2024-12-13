@@ -87,8 +87,8 @@ val cur_stats : t -> stats
 (* val base_spd : t -> int *)
 (** [base_spd p] is the base Speed of pokemon [p]. *)
 
-(* val hp : t -> int *)
-(** [hp p] is the current HP of pokemon [p], including changes from damage. *)
+val cur_hp : t -> int
+(** [cur_hp p] is the current HP of pokemon [p], including changes from damage. *)
 
 (* val max_hp : t -> int *)
 (** [max_hp p] is the max HP of pokemon [p] *)
@@ -109,7 +109,7 @@ val cur_stats : t -> stats
 (** [spdef p] is the current Special Defense of pokemon [p], including changes
     from stat stages. *)
 
-(* val spd : t -> int *)
+val spd : t -> int
 (** [spd p] is the current Speed of pokemon [p], including changes from stat
     stages. *)
 
